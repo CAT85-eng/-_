@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>时脚本 · 官方网站</title>
+    <meta name="description" content="时脚本 - 轻量高效的游戏辅助脚本">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --bg-soft: #f5f5f7;
+            --text: #16161a;
+            --text-secondary: #6e6e7a;
+            --text-tertiary: #9a9aa5;
+            --border: rgba(0, 0, 0, 0.08);
+            --accent: #16161a;
+            --radius: 16px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --spring-medium: cubic-bezier(0.34, 1.4, 0.64, 1);
+            --spring-heavy: cubic-bezier(0.68, -0.4, 0.27, 1.4);
+            --damping: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+
+        /* 手机端 */
+        .mobile-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            height: 52px;
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 480px;
+            z-index: 999;
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05), 0 1px 0 rgba(255,255,255,0.95) inset;
+        }
+
+        .mobile-nav-brand {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mobile-nav-brand img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        .mobile-nav-toggle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mobile-nav-toggle span {
+            width: 16px;
+            height: 1.5px;
+            background: var(--text);
+            border-radius: 50px;
+            transition: transform 0.4s var(--spring-heavy), opacity 0.3s ease;
+        }
+
+        .mobile-nav-toggle.active span:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }
+        .mobile-nav-toggle.active span:nth-child(2) { opacity: 0; }
+        .mobile-nav-toggle.active span:nth-child(3) { transform: translateY(-5.5px) rotate(-45deg); }
+
+        .mobile-menu {
+            position: fixed;
+            top: 72px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            width: calc(100% - 32px);
+            max-width: 480px;
+            background: rgba(255,255,255,0.55);
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            border: 1px solid rgba(255,255,255,0.95);
+            border-radius: 18px;
+            padding: 8px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.08);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.5s var(--spring-medium);
+            z-index: 998;
+        }
+
+        .mobile-menu.open { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+        .mobile-menu a { display: block; padding: 13px 18px; border-radius: 10px; text-decoration: none; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
+        .mobile-menu a:hover { background: rgba(255,255,255,0.6); color: var(--text); }
+
+        .mobile-main { padding-top: 72px; max-width: 480px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+        .mobile-hero { text-align: center; padding: 40px 4px 50px; }
+        .mobile-hero h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -1.5px; line-height: 1.15; margin-bottom: 16px; }
+        .mobile-hero p { font-size: 0.95rem; color: var(--text-secondary); max-width: 320px; margin: 0 auto 28px; }
+        .mobile-hero-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .mobile-btn { padding: 12px 24px; border-radius: 50px; font-size: 0.88rem; font-weight: 600; text-decoration: none; cursor: pointer; border: none; }
+        .mobile-btn-primary { background: var(--accent); color: #fff; }
+        .mobile-btn-secondary { background: var(--bg-soft); color: var(--text); border: 1px solid var(--border); }
+        .mobile-btn:active { transform: scale(0.92); }
+
+        .mobile-features { display: flex; flex-direction: column; gap: 14px; padding: 20px 0 40px; }
+        .mobile-feature-card { background: rgba(255,255,255,0.6); backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%); border: 1px solid rgba(255,255,255,0.9); border-radius: 24px; padding: 24px 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); display: flex; align-items: flex-start; gap: 16px; }
+        .mobile-feature-icon { width: 42px; height: 42px; border-radius: 14px; background: var(--bg-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .mobile-feature-icon svg { width: 20px; height: 20px; stroke: var(--text); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .mobile-feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+        .mobile-feature-card p { font-size: 0.85rem; color: var(--text-secondary); }
+
+        .mobile-team-section { padding: 20px 0 40px; }
+        .mobile-team-section h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 20px; text-align: center; }
+        .mobile-team-grid { display: flex; flex-direction: column; gap: 14px; }
+        .mobile-team-card { background: rgba(255,255,255,0.6); backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%); border: 1px solid rgba(255,255,255,0.9); border-radius: 24px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 16px; }
+        .mobile-team-card img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+        .mobile-team-name { display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: 0.95rem; }
+        .mobile-team-name img { width: 16px; height: 16px; flex-shrink: 0; }
+        .mobile-team-role { font-size: 0.78rem; color: var(--text-tertiary); }
+
+        .mobile-supporters-entry { margin-top: 16px; width: 100%; padding: 14px 20px; background: rgba(255,255,255,0.6); backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%); border: 1px solid rgba(255,255,255,0.9); border-radius: 24px; font-size: 0.9rem; font-weight: 600; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .mobile-supporters-entry:active { transform: scale(0.96); }
+        .mobile-supporters-arrow { font-size: 1.2rem; color: var(--text-tertiary); }
+
+        .mobile-cat-section { padding: 20px 0 40px; }
+        .mobile-cat-section h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 20px; text-align: center; }
+        .mobile-cat-wrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .mobile-cat { width: 100px; height: 100px; border-radius: 20px; object-fit: cover; cursor: grab; user-select: none; -webkit-user-drag: none; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+        .mobile-cat-bubble { position: absolute; top: -32px; left: 50%; transform: translateX(-50%) scale(0); background: var(--text); color: #fff; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; pointer-events: none; opacity: 0; transition: transform 0.3s var(--spring-medium), opacity 0.3s ease; z-index: 10; }
+        .mobile-cat-bubble.show { transform: translateX(-50%) scale(1); opacity: 1; }
+        .mobile-cat-label { font-size: 0.8rem; font-weight: 600; color: var(--text-tertiary); }
+
+        .mobile-story-section { padding: 20px 0 40px; }
+        .mobile-story-section h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 20px; text-align: center; }
+        .mobile-story-card { background: rgba(255,255,255,0.6); backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%); border: 1px solid rgba(255,255,255,0.9); border-radius: 24px; padding: 24px 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .mobile-story-card p { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px; }
+        .mobile-story-card p:last-child { margin-bottom: 0; }
+
+        .mobile-code-section { padding: 20px 0 50px; text-align: center; }
+        .mobile-code-section h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 8px; }
+        .mobile-code-section > p { color: var(--text-secondary); margin-bottom: 24px; font-size: 0.9rem; }
+        .mobile-code-card { background: rgba(255,255,255,0.6); backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%); border: 1px solid rgba(255,255,255,0.9); border-radius: 24px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; }
+        .mobile-btn-code { padding: 10px 20px; background: var(--bg-soft); border: none; border-radius: 50px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+        .mobile-btn-code:active { transform: scale(0.9); background: var(--accent); color: #fff; }
+
+        .mobile-footer { text-align: center; padding: 24px 16px; border-top: 1px solid var(--border); color: var(--text-tertiary); font-size: 0.75rem; }
+        .mobile-footer a { color: var(--text-secondary); text-decoration: none; }
+
+        /* 电脑端 */
+        .desktop-nav, .desktop-sidebar, .desktop-overlay, .desktop-main, .desktop-footer, .easter-egg-overlay { display: none; }
+
+        @media (min-width: 768px) {
+            .mobile-nav, .mobile-menu, .mobile-main, .mobile-footer { display: none; }
+            .desktop-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 72px; position: fixed; top: 0; left: 0; right: 0; z-index: 999; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid var(--border); }
+            .desktop-nav-brand { display: flex; align-items: center; gap: 10px; font-size: 1.15rem; font-weight: 700; letter-spacing: -0.3px; text-decoration: none; color: var(--text); cursor: pointer; user-select: none; }
+            .desktop-nav-brand img { width: 28px; height: 28px; border-radius: 8px; object-fit: cover; }
+            .desktop-nav-toggle { width: 44px; height: 44px; border-radius: 12px; background: var(--bg-soft); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; }
+            .desktop-nav-toggle span { width: 18px; height: 2px; background: var(--text); border-radius: 50px; transition: transform 0.4s var(--spring-heavy), opacity 0.3s ease; }
+            .desktop-nav-toggle.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+            .desktop-nav-toggle.active span:nth-child(2) { opacity: 0; }
+            .desktop-nav-toggle.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+            .desktop-sidebar { display: block; position: fixed; top: 0; right: -320px; width: 300px; height: 100vh; background: #fff; z-index: 1000; padding: 24px 16px; box-shadow: -8px 0 32px rgba(0,0,0,0.1); transition: right 0.4s var(--transition); overflow-y: auto; }
+            .desktop-sidebar.open { right: 0; }
+            .desktop-sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding: 0 8px; }
+            .desktop-sidebar-header span { font-size: 1.1rem; font-weight: 700; }
+            .desktop-sidebar-close { width: 36px; height: 36px; border-radius: 10px; background: var(--bg-soft); border: 1px solid var(--border); cursor: pointer; font-size: 1.1rem; color: var(--text-secondary); }
+            .desktop-sidebar a { display: block; padding: 14px 16px; border-radius: 10px; text-decoration: none; color: var(--text-secondary); font-size: 0.95rem; font-weight: 500; }
+            .desktop-sidebar a:hover { background: var(--bg-soft); color: var(--text); }
+            .desktop-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 998; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+            .desktop-overlay.active { opacity: 1; pointer-events: auto; }
+            .desktop-main { display: block; padding-top: 72px; max-width: 1100px; margin: 0 auto; padding-left: 48px; padding-right: 48px; }
+            .desktop-footer { display: block; text-align: center; padding: 24px; border-top: 1px solid var(--border); color: var(--text-tertiary); font-size: 0.8rem; }
+            .desktop-footer a { color: var(--text-secondary); text-decoration: none; }
+            .easter-egg-overlay { display: block; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.3s ease; }
+            .easter-egg-overlay.active { opacity: 1; pointer-events: auto; }
+            .desktop-hero { display: flex; align-items: center; gap: 40px; padding: 80px 0 60px; }
+            .desktop-hero-logo-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+            .desktop-hero-logo { width: 120px; height: 120px; border-radius: 24px; object-fit: cover; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+            .desktop-hero-logo-label { font-size: 0.85rem; font-weight: 600; color: var(--text-tertiary); }
+            .desktop-hero-cat-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; position: relative; }
+            .desktop-hero-cat { width: 100px; height: 100px; border-radius: 20px; object-fit: cover; cursor: grab; user-select: none; -webkit-user-drag: none; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+            .desktop-hero-cat.dragging { transform: scale(1.05); box-shadow: 0 16px 40px rgba(0,0,0,0.16); }
+            .desktop-cat-bubble { position: absolute; top: -32px; left: 50%; transform: translateX(-50%) scale(0); background: var(--text); color: #fff; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; pointer-events: none; opacity: 0; transition: transform 0.3s var(--spring-medium), opacity 0.3s ease; z-index: 10; }
+            .desktop-cat-bubble.show { transform: translateX(-50%) scale(1); opacity: 1; }
+            .desktop-cat-label { font-size: 0.8rem; font-weight: 600; color: var(--text-tertiary); }
+            .desktop-hero-content h1 { font-size: 2.8rem; font-weight: 800; letter-spacing: -1.5px; line-height: 1.15; margin-bottom: 16px; }
+            .desktop-hero-content p { font-size: 1.05rem; color: var(--text-secondary); max-width: 480px; margin-bottom: 32px; }
+            .desktop-hero-buttons { display: flex; gap: 12px; }
+            .desktop-btn { padding: 12px 28px; border-radius: 50px; font-size: 0.95rem; font-weight: 600; text-decoration: none; cursor: pointer; border: none; }
+            .desktop-btn-primary { background: var(--accent); color: #fff; box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+            .desktop-btn-secondary { background: var(--bg-soft); color: var(--text); border: 1px solid var(--border); }
+            .desktop-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 40px 0 60px; }
+            .desktop-feature-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+            .desktop-feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+            .desktop-feature-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--bg-soft); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+            .desktop-feature-icon svg { width: 22px; height: 22px; stroke: var(--text); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+            .desktop-feature-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+            .desktop-feature-card p { font-size: 0.9rem; color: var(--text-secondary); }
+            .desktop-team-section { padding: 40px 0 60px; }
+            .desktop-team-section h2 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 28px; }
+            .desktop-team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 600px; }
+            .desktop-team-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+            .desktop-team-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+            .desktop-team-card img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; }
+            .desktop-team-name { display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: 1rem; }
+            .desktop-team-name img { width: 18px; height: 18px; }
+            .desktop-team-role { font-size: 0.85rem; color: var(--text-tertiary); }
+            .desktop-supporters-entry { margin-top: 16px; max-width: 600px; width: 100%; padding: 14px 20px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); font-size: 0.95rem; font-weight: 600; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+            .desktop-supporters-entry:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+            .desktop-supporters-arrow { font-size: 1.2rem; color: var(--text-tertiary); }
+            .desktop-story-section { padding: 40px 0 60px; }
+            .desktop-story-section h2 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 28px; }
+            .desktop-story-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+            .desktop-story-card p { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px; }
+            .desktop-story-card p:last-child { margin-bottom: 0; }
+            .desktop-code-section { padding: 40px 0 60px; }
+            .desktop-code-section h2 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 8px; }
+            .desktop-code-section > p { font-size: 1rem; color: var(--text-secondary); margin-bottom: 28px; }
+            .desktop-code-card { max-width: 400px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+            .desktop-code-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+            .desktop-code-item { display: flex; align-items: center; justify-content: space-between; }
+            .desktop-btn-code { padding: 10px 20px; background: var(--bg-soft); border: none; border-radius: 50px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+            .desktop-btn-code:hover { background: var(--accent); color: #fff; transform: translateY(-2px); }
+            .easter-egg-particle { position: absolute; width: 10px; height: 10px; border-radius: 50%; animation: particleBurst 1.2s var(--spring-heavy) forwards; }
+            @keyframes particleBurst { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
+            .easter-egg-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0); font-size: 3rem; font-weight: 800; letter-spacing: -1px; color: #1a1a1a; animation: eggTextPop 1s var(--spring-heavy) forwards; }
+            @keyframes eggTextPop { 0% { transform: translate(-50%,-50%) scale(0) rotate(-10deg); opacity: 0; } 50% { transform: translate(-50%,-50%) scale(1.4) rotate(3deg); opacity: 1; } 70% { transform: translate(-50%,-50%) scale(0.92) rotate(-1deg); } 100% { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; } }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 手机端 -->
+    <nav class="mobile-nav">
+        <a href="#" class="mobile-nav-brand" id="mobileBrandLogo">
+            <img src="https://imgs.li/uploads/20260824/f133a3bfb12d3abd6e2c59400358ee8b.jpg" alt="Logo">
+            时脚本
+        </a>
+        <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="菜单">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#mobileFeatures">功能特色</a>
+        <a href="#mobileTeam">团队成员</a>
+        <a href="#mobileCat">小猫</a>
+        <a href="#mobileStory">来时路</a>
+        <a href="#mobileCode">获取代码</a>
+    </div>
+
+    <main class="mobile-main">
+        <section class="mobile-hero">
+            <h1>时脚本<br>让一切更简单</h1>
+            <p>轻量、高效、稳定。无需复杂配置，即刻开始使用。</p>
+            <div class="mobile-hero-buttons">
+                <a href="#mobileCode" class="mobile-btn mobile-btn-primary">获取代码</a>
+                <a href="#mobileFeatures" class="mobile-btn mobile-btn-secondary">了解更多</a>
+            </div>
+        </section>
+
+        <section class="mobile-features" id="mobileFeatures">
+            <div class="mobile-feature-card">
+                <div class="mobile-feature-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+                <div><h3>极速响应</h3><p>底层深度优化，启动速度与执行效率均达到极致表现，流畅不卡顿。</p></div>
+            </div>
+            <div class="mobile-feature-card">
+                <div class="mobile-feature-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+                <div><h3>安全稳定</h3><p>多重防护机制全程护航，确保每一次使用都安心无忧。</p></div>
+            </div>
+            <div class="mobile-feature-card">
+                <div class="mobile-feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                <div><h3>持续更新</h3><p>定期推送版本更新，不断优化体验，始终保持在最佳状态。</p></div>
+            </div>
+        </section>
+
+        <section class="mobile-team-section" id="mobileTeam">
+            <h2>团队</h2>
+            <div class="mobile-team-grid">
+                <div class="mobile-team-card">
+                    <img src="https://imgs.li/uploads/20260824/5f00049bb60a7dafac25c84e4e744a2d.jpg" alt="作者">
+                    <div>
+                        <div class="mobile-team-name">作者 <img src="https://imgs.li/uploads/20260824/f133a3bfb12d3abd6e2c59400358ee8b.jpg" alt="蓝标"></div>
+                        <div class="mobile-team-role">核心开发</div>
+                    </div>
+                </div>
+                <div class="mobile-team-card">
+                    <img src="https://imgs.li/uploads/20260824/d1152758a687b43a3b9224b757256eae.jpg" alt="网站维护">
+                    <div>
+                        <div class="mobile-team-name">网站维护 <img src="https://imgs.li/uploads/20260824/f133a3bfb12d3abd6e2c59400358ee8b.jpg" alt="蓝标"></div>
+                        <div class="mobile-team-role">站点运维</div>
+                    </div>
+                </div>
+            </div><button class="mobile-supporters-entry" onclick="window.open('你的支持者网页链接','_blank')">
+                查看支持者
+                <span class="mobile-supporters-arrow">›</span>
+            </button>
+        </section>
+
+        <section class="mobile-cat-section" id="mobileCat">
+            <h2>小猫</h2>
+            <div class="mobile-cat-wrap">
+                <div class="mobile-cat-bubble" id="mobileCatBubble">喵</div>
+                <img src="https://imgs.li/uploads/20260824/f0ddea4654206edab38fe3cbfa3e5a05.jpg" alt="小猫" class="mobile-cat" id="mobileCat" draggable="false">
+                <span class="mobile-cat-label">小猫</span>
+            </div>
+        </section>
+
+        <section class="mobile-story-section" id="mobileStory">
+            <h2>时脚本的来时路</h2>
+            <div class="mobile-story-card">
+                <p>最初，时脚本只是一个小作坊里的实验项目。没有官网，没有团队，只有几行简陋的代码和一个不甘平庸的想法。</p>
+                <p>经过无数次迭代与打磨，第二代脚本逐渐在玩家群体中传开。随着用户增长，时脚本迎来了第一批支持者，也开始有了一个简单的官方网站。</p>
+                <p>如今，第三代时脚本正式发布。从代码到界面，从性能到安全，全面进化。感谢每一位一路陪伴的用户，也感谢每一位为时脚本付出的人。</p>
+            </div>
+        </section>
+
+        <section class="mobile-code-section" id="mobileCode">
+            <h2>获取代码</h2>
+            <p>第三代脚本代码，开放获取</p>
+            <div class="mobile-code-card">
+                <div>
+                    <h4 style="font-weight:600;font-size:0.9rem;">时脚本 · 第三代</h4>
+                    <p style="font-size:0.78rem;color:var(--text-tertiary);">最新版本 · 持续更新</p>
+                </div>
+                <button class="mobile-btn-code" onclick="window.open('你的代码链接','_blank')">获取代码</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mobile-footer">
+        <p>&copy; 2026 时脚本 · 官方网站 &nbsp;|&nbsp; <a href="#">用户协议</a> &nbsp;|&nbsp; <a href="#">隐私政策</a></p>
+    </footer>
+
+    <!-- 电脑端 -->
+    <nav class="desktop-nav">
+        <a href="#" class="desktop-nav-brand" id="brandLogo">
+            <img src="https://imgs.li/uploads/20260824/f133a3bfb12d3abd6e2c59400358ee8b.jpg" alt="Logo">
+            时脚本
+        </a>
+        <button class="desktop-nav-toggle" id="navToggle" aria-label="菜单">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="desktop-overlay" id="overlay"></div>
+    <aside class="desktop-sidebar" id="sidebar">
+        <div class="desktop-sidebar-header">
+            <span>菜单</span>
+            <button class="desktop-sidebar-close" id="sidebarClose">✕</button>
+        </div>
+        <a href="#desktopFeatures">功能特色</a>
+        <a href="#desktopTeam">团队成员</a>
+        <a href="#desktopStory">来时路</a>
+        <a href="#desktopCode">获取代码</a>
+    </aside>
+
+    <main class="desktop-main">
+        <section class="desktop-hero">
+            <div class="desktop-hero-logo-wrap">
+                <img src="https://imgs.li/uploads/20260824/f133a3bfb12d3abd6e2c59400358ee8b.jpg" alt="时脚本" class="desktop-hero-logo">
+                <span class="desktop-hero-logo-label">脚本</span>
+            </div>
+            <div class="desktop-hero-cat-wrap">
+                <div class="desktop-cat-bubble" id="catBubble">呼噜呼噜</div>
+                <img src="https://imgs.li/uploads/20260824/f0ddea4654206edab38fe3cbfa3e5a05.jpg" alt="小猫" class="desktop-hero-cat" id="heroCat" draggable="false">
+                <span class="desktop-cat-label">小猫</span>
+            </div>
+            <div class="desktop-hero-content">
+                <h1>时脚本，让一切更简单</h1>
+                <p>轻量、高效、稳定。无需复杂配置，即刻开始使用。第三代脚本，全新体验。</p>
+                <div class="desktop-hero-buttons">
+                    <a href="#desktopCode" class="desktop-btn desktop-btn-primary">获取代码</a>
+                    <a href="#desktopFeatures" class="desktop-btn desktop-btn-secondary">了解更多</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="desktop-features" id="desktopFeatures">
+            <div class="desktop-feature-card">
+                <div class="desktop-feature-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+                <h3>极速响应</h3>
+                <p>底层深度优化，启动速度与执行效率均达到极致表现，流畅不卡顿。</p>
+            </div>
+            <div class="desktop-feature-card">
+                <div class="desktop-feature-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+                <h3>安全稳定</h3>
+                <p>多重防护机制全程护航，确保每一次使用都安心无忧。</p>
+            </div>
+            <div class="desktop-feature-card">
+                <div class="desktop-feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                <h3>持续更新</h3>
+                <p>定期推送版本更新，不断优化体验，始终保持在最佳状态。</p>
+            </div>
+        </section>
+
+        <section class="desktop-team-section" id="desktopTeam">
+            <h2>团队</h2>
+            <div class="desktop-team-grid">
+                <div class="desktop-team-card">
+                    <img src="https://imgs.li/uploads/20260824/5f00049bb60a7dafac25c84e4e744a2d.jpg" alt="作者">
+                    <div class="desktop-team-name">
+                        作者
+                        <img src="https://imgs.li/uploads/20260824/f133a3bfb12d3abd6e2c59400358ee8b.jpg" alt="蓝标">
+                    </div>
+                    <div class="desktop-team-role">核心开发</div>
+                </div>
+                <div class="desktop-team-card">
+                    <img src="https://imgs.li/uploads/20260824/d1152758a687b43a3b9224b757256eae.jpg" alt="网站维护">
+                    <div class="desktop-team-name">
+                        网站维护
+                        <img src="https://imgs.li/uploads/20260824/f133a3bfb12d3abd6e2c59400358ee8b.jpg" alt="蓝标">
+                    </div>
+                    <div class="desktop-team-role">站点运维</div>
+                </div>
+            </div>
+
+            <button class="desktop-supporters-entry" onclick="window.open('你的支持者网页链接','_blank')">
+                查看支持者
+                <span class="desktop-supporters-arrow">›</span>
+            </button>
+        </section>
+
+        <section class="desktop-story-section" id="desktopStory">
+            <h2>时脚本的来时路</h2>
+            <div class="desktop-story-card">
+                <p>最初，时脚本只是一个小作坊里的实验项目。没有官网，没有团队，只有几行简陋的代码和一个不甘平庸的想法。</p>
+                <p>经过无数次迭代与打磨，第二代脚本逐渐在玩家群体中传开。随着用户增长，时脚本迎来了第一批支持者，也开始有了一个简单的官方网站。</p>
+                <p>如今，第三代时脚本正式发布。从代码到界面，从性能到安全，全面进化。感谢每一位一路陪伴的用户，也感谢每一位为时脚本付出的人。</p>
+            </div>
+        </section>
+
+        <section class="desktop-code-section" id="desktopCode">
+            <h2>获取代码</h2>
+            <p>第三代脚本代码，开放获取</p>
+            <div class="desktop-code-card">
+                <div class="desktop-code-item">
+                    <div>
+                        <h4 style="font-weight:600;font-size:0.95rem;">时脚本 · 第三代</h4>
+                        <p style="font-size:0.8rem;color:var(--text-tertiary);">最新版本 · 持续更新</p>
+                    </div>
+                    <button class="desktop-btn-code" onclick="window.open('你的代码链接','_blank')">获取代码</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="desktop-footer">
+        <p>&copy; 2026 时脚本 · 官方网站 &nbsp;|&nbsp; <a href="#">用户协议</a> &nbsp;|&nbsp; <a href="#">隐私政策</a></p>
+    </footer>
+
+    <div class="easter-egg-overlay" id="easterEggOverlay"></div>
+
+    <script>
+        (function() {
+            const mobileNavToggle = document.getElementById('mobileNavToggle');
+            const mobileMenu = document.getElementById('mobileMenu');
+
+            mobileNavToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                mobileNavToggle.classList.toggle('active');
+                mobileMenu.classList.toggle('open');
+            });
+
+            mobileMenu.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    mobileNavToggle.classList.remove('active');
+                    mobileMenu.classList.remove('open');
+                });
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!mobileMenu.contains(e.target) && !mobileNavToggle.contains(e.target)) {
+                    mobileNavToggle.classList.remove('active');
+                    mobileMenu.classList.remove('open');
+                }
+            });
+
+            const mobileCat = document.getElementById('mobileCat');
+            const mobileCatBubble = document.getElementById('mobileCatBubble');
+
+            mobileCat.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                showMobileCatBubble('喵');
+                setTimeout(hideMobileCatBubble, 800);
+            });
+
+            mobileCat.addEventListener('click', function() {
+                showMobileCatBubble('喵');
+                setTimeout(hideMobileCatBubble, 800);
+            });
+
+            function showMobileCatBubble(text) {
+                mobileCatBubble.textContent = text;
+                mobileCatBubble.classList.add('show');
+            }
+
+            function hideMobileCatBubble() {
+                mobileCatBubble.classList.remove('show');
+            }
+
+            const navToggle = document.getElementById('navToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarClose = document.getElementById('sidebarClose');
+            const overlay = document.getElementById('overlay');
+
+            navToggle.addEventListener('click', function() {
+                navToggle.classList.toggle('active');
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            });
+
+            sidebarClose.addEventListener('click', function() {
+                navToggle.classList.remove('active');
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+
+            overlay.addEventListener('click', function() {
+                navToggle.classList.remove('active');
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+
+            sidebar.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    navToggle.classList.remove('active');
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                });
+            });
+
+            const heroCat = document.getElementById('heroCat');
+            const catBubble = document.getElementById('catBubble');
+            let catX = 0, catY = 0;
+            let isDragging = false;
+            let dragStartX = 0, dragStartY = 0;
+            let catMoved = false;
+            let lastMoveTime = 0;
+            let bubbleTimer = null;
+
+            heroCat.addEventListener('mousemove', function(e) {
+                if (isDragging) return;
+                const now = Date.now();
+                if (now - lastMoveTime > 200) {
+                    lastMoveTime = now;
+                    showCatBubble('呼噜呼噜');
+                    clearTimeout(bubbleTimer);
+                    bubbleTimer = setTimeout(hideCatBubble, 600);
+                }
+            });
+
+            heroCat.addEventListener('mouseleave', function() {
+                if (!isDragging) hideCatBubble();
+            });
+
+            heroCat.addEventListener('click', function(e) {
+                if (catMoved) {
+                    catMoved = false;
+                    return;
+                }
+                showCatBubble('喵');
+                clearTimeout(bubbleTimer);
+                bubbleTimer = setTimeout(hideCatBubble, 800);
+            });
+
+            heroCat.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                isDragging = true;
+                catMoved = false;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                heroCat.classList.add('dragging');
+                hideCatBubble();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                const dx = e.clientX - dragStartX;
+                const dy = e.clientY - dragStartY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) catMoved = true;
+                catX += dx;
+                catY += dy;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                heroCat.style.transform = 'translate(' + catX + 'px, ' + catY + 'px)';
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    heroCat.classList.remove('dragging');
+                }
+            });
+
+            function showCatBubble(text) {
+                catBubble.textContent = text;
+                catBubble.classList.add('show');
+            }
+
+            function hideCatBubble() {
+                catBubble.classList.remove('show');
+            }
+
+            const brandLogo = document.getElementById('brandLogo');
+            const easterEggOverlay = document.getElementById('easterEggOverlay');
+            let clickCount = 0;
+            let clickTimer = null;
+            let eggTriggered = false;
+
+            brandLogo.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (eggTriggered) return;
+                clickCount++;
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(function() {
+                    clickCount = 0;
+                }, 800);
+                if (clickCount >= 5) {
+                    eggTriggered = true;
+                    clickCount = 0;
+                    triggerEasterEgg();
+                }
+            });
+
+            function triggerEasterEgg() {
+                const overlayEl = easterEggOverlay;
+                const colors = ['#d4a72c', '#7c3aed', '#ec4899', '#06b6d4', '#16161a', '#5a5a6e'];
+                for (let i = 0; i < 60; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'easter-egg-particle';
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 150 + Math.random() * 400;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.cssText = 'left:50%;top:50%;background:' + color + ';width:' + (6 + Math.random() * 14) + 'px;height:' + (6 + Math.random() * 14) + 'px;--tx:' + tx + 'px;--ty:' + ty + 'px;animation-delay:' + (Math.random() * 0.3) + 's;';
+                    overlayEl.appendChild(particle);
+                }
+                const text = document.createElement('div');
+                text.className = 'easter-egg-text';
+                text.textContent = '时脚本';
+                overlayEl.appendChild(text);
+                overlayEl.classList.add('active');
+                setTimeout(function() {
+                    overlayEl.classList.remove('active');
+                    setTimeout(function() {
+                        overlayEl.innerHTML = '';
+                        eggTriggered = false;
+                    }, 400);
+                }, 2000);
+            }
+        })();
+    </script>
+
+</body>
+</html>
