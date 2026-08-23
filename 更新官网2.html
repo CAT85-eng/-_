@@ -18,6 +18,8 @@
             --radius: 16px;
             --radius-lg: 20px;
             --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --spring-medium: cubic-bezier(0.34, 1.4, 0.64, 1);
+            --spring-heavy: cubic-bezier(0.68, -0.4, 0.27, 1.4);
         }
 
         * {
@@ -66,8 +68,8 @@
             font-size: 1.15rem;
             font-weight: 700;
             letter-spacing: -0.3px;
-            color: var(--text);
             text-decoration: none;
+            color: var(--text);
             cursor: pointer;
             user-select: none;
         }
@@ -111,27 +113,23 @@
             background: var(--text);
             border-radius: 50px;
             transition: 
-                transform 0.4s cubic-bezier(0.68, -0.4, 0.27, 1.4),
-                opacity 0.3s ease,
-                width 0.3s ease;
+                transform 0.4s var(--spring-heavy),
+                opacity 0.3s ease;
         }
 
         .desktop-nav-toggle.active span:nth-child(1) {
             transform: translateY(7px) rotate(45deg);
-            width: 20px;
         }
 
         .desktop-nav-toggle.active span:nth-child(2) {
             opacity: 0;
-            transform: scaleX(0);
         }
 
         .desktop-nav-toggle.active span:nth-child(3) {
             transform: translateY(-7px) rotate(-45deg);
-            width: 20px;
         }
 
-        /* Android 风格侧边栏 */
+        /* ============ Android 风格侧边栏 ============ */
         .desktop-sidebar {
             position: fixed;
             top: 0;
@@ -142,7 +140,7 @@
             z-index: 1000;
             padding: 24px 16px;
             box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1);
-            transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: right 0.4s var(--transition);
             overflow-y: auto;
         }
 
@@ -174,7 +172,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: var(--text-secondary);
             transition: 
                 transform 0.3s var(--transition),
@@ -215,12 +213,6 @@
             transition: transform 0.1s ease;
         }
 
-        .desktop-sidebar-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 12px 8px;
-        }
-
         .desktop-overlay {
             position: fixed;
             inset: 0;
@@ -245,11 +237,11 @@
             padding-right: 48px;
         }
 
-        /* Hero */
+        /* ============ Hero ============ */
         .hero {
             display: flex;
             align-items: center;
-            gap: 48px;
+            gap: 40px;
             padding: 80px 0 60px;
         }
 
@@ -268,7 +260,7 @@
             object-fit: cover;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
             transition: 
-                transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1),
+                transform 0.4s var(--spring-medium),
                 box-shadow 0.4s ease;
             cursor: default;
         }
@@ -283,6 +275,79 @@
             font-weight: 600;
             color: var(--text-tertiary);
             letter-spacing: 0.5px;
+        }
+
+        /* ============ 小猫 ============ */
+        .hero-cat-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .hero-cat {
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            object-fit: cover;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-drag: none;
+            position: relative;
+            transition: 
+                transform 0.3s var(--spring-medium),
+                box-shadow 0.3s ease;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .hero-cat:active {
+            cursor: grabbing;
+        }
+
+        .hero-cat.dragging {
+            transform: scale(1.05);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+            transition: transform 0.1s ease;
+        }
+
+        .cat-bubble {
+            position: absolute;
+            top: -32px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: var(--text);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: 
+                transform 0.3s var(--spring-medium),
+                opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        .cat-bubble.show {
+            transform: translateX(-50%) scale(1);
+            opacity: 1;
+        }
+
+        .cat-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            letter-spacing: 0.3px;
+            pointer-events: none;
+        }
+
+        /* ============ Hero 内容 ============ */
+        .hero-content {
+            flex: 1;
         }
 
         .hero-content h1 {
@@ -317,7 +382,7 @@
             align-items: center;
             gap: 6px;
             transition: 
-                transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1),
+                transform 0.3s var(--spring-medium),
                 box-shadow 0.3s ease,
                 background 0.3s ease;
         }
@@ -354,7 +419,7 @@
             transition: transform 0.1s ease;
         }
 
-        /* 功能卡片 */
+        /* ============ 功能卡片 ============ */
         .features {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -369,8 +434,8 @@
             padding: 32px 28px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
             transition: 
-                transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.3s var(--transition),
+                box-shadow 0.3s var(--transition),
                 border-color 0.3s ease;
             cursor: default;
         }
@@ -420,7 +485,7 @@
             line-height: 1.5;
         }
 
-        /* 团队 */
+        /* ============ 团队 ============ */
         .team-section {
             padding: 40px 0 60px;
         }
@@ -445,8 +510,8 @@
             padding: 32px 20px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
             transition: 
-                transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.3s var(--transition),
+                box-shadow 0.3s var(--transition),
                 border-color 0.3s ease;
             cursor: default;
             display: flex;
@@ -489,7 +554,7 @@
             color: var(--text-tertiary);
         }
 
-        /* 来时路 */
+        /* ============ 来时路 ============ */
         .story-section {
             padding: 40px 0 60px;
         }
@@ -520,7 +585,7 @@
             margin-bottom: 0;
         }
 
-        /* 代码 */
+        /* ============ 代码 ============ */
         .code-section {
             padding: 40px 0 60px;
         }
@@ -546,8 +611,8 @@
             padding: 24px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
             transition: 
-                transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                transform 0.3s var(--transition),
+                box-shadow 0.3s var(--transition);
         }
 
         .code-card:hover {
@@ -570,7 +635,7 @@
             font-size: 0.85rem;
             cursor: pointer;
             transition: 
-                transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1),
+                transform 0.3s var(--spring-medium),
                 background 0.3s ease,
                 color 0.3s ease;
         }
@@ -586,7 +651,7 @@
             transition: transform 0.1s ease;
         }
 
-        /* 页脚 */
+        /* ============ 页脚 ============ */
         .footer {
             text-align: center;
             padding: 24px;
@@ -604,7 +669,7 @@
             color: var(--text);
         }
 
-        /* 彩蛋 */
+        /* ============ 彩蛋 ============ */
         .easter-egg-overlay {
             position: fixed;
             inset: 0;
@@ -624,7 +689,7 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            animation: particleBurst 1.2s cubic-bezier(0.68, -0.4, 0.27, 1.4) forwards;
+            animation: particleBurst 1.2s var(--spring-heavy) forwards;
         }
 
         @keyframes particleBurst {
@@ -647,7 +712,7 @@
             font-weight: 800;
             letter-spacing: -1px;
             color: #1a1a1a;
-            animation: eggTextPop 1s cubic-bezier(0.68, -0.4, 0.27, 1.4) forwards;
+            animation: eggTextPop 1s var(--spring-heavy) forwards;
         }
 
         @keyframes eggTextPop {
@@ -684,7 +749,7 @@
         </button>
     </nav>
 
-    <!-- Android 风格侧边栏 -->
+    <!-- 侧边栏 -->
     <div class="desktop-overlay" id="overlay"></div>
     <aside class="desktop-sidebar" id="sidebar">
         <div class="desktop-sidebar-header">
@@ -704,6 +769,14 @@
                 <img src="https://imgs.li/uploads/20260823/f133a3bfb12d3abd6e2c59400358ee8b.jpg" alt="时脚本" class="hero-logo">
                 <span class="hero-logo-label">脚本</span>
             </div>
+
+            <!-- 小猫 -->
+            <div class="hero-cat-wrap" id="catWrap">
+                <div class="cat-bubble" id="catBubble">呼噜呼噜</div>
+                <img src="https://imgs.li/uploads/20260823/f0ddea4654206edab38fe3cbfa3e5a05.jpg" alt="小猫" class="hero-cat" id="heroCat" draggable="false">
+                <span class="cat-label">小猫</span>
+            </div>
+
             <div class="hero-content">
                 <h1>时脚本，让一切更简单</h1>
                 <p>轻量、高效、稳定。无需复杂配置，即刻开始使用。第三代脚本，全新体验。</p>
@@ -806,7 +879,7 @@
 
     <script>
         (function() {
-            // 侧边栏
+            // ============ 侧边栏 ============
             const navToggle = document.getElementById('navToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarClose = document.getElementById('sidebarClose');
@@ -838,8 +911,91 @@
                 });
             });
 
-            // 彩蛋：连续点击Logo五次
-            const brandLogo = document.getElementById('brandLogo');
+            // ============ 小猫交互 ============
+            const heroCat = document.getElementById('heroCat');
+            const catBubble = document.getElementById('catBubble');
+
+            let catX = 0;
+            let catY = 0;
+            let isDragging = false;
+            let dragStartX = 0;
+            let dragStartY = 0;
+            let catMoved = false;
+            let lastMoveTime = 0;
+            let bubbleTimer = null;
+
+            heroCat.addEventListener('mousemove', function(e) {
+                if (isDragging) return;
+                const now = Date.now();
+                if (now - lastMoveTime > 200) {
+                    lastMoveTime = now;
+                    showBubble('呼噜呼噜');
+                    clearTimeout(bubbleTimer);
+                    bubbleTimer = setTimeout(function() {
+                        hideBubble();
+                    }, 600);
+                }
+            });
+
+            heroCat.addEventListener('mouseleave', function() {
+                if (!isDragging) {
+                    hideBubble();
+                }
+            });
+
+            heroCat.addEventListener('click', function(e) {
+                if (catMoved) {
+                    catMoved = false;
+                    return;
+                }
+                showBubble('喵');
+                clearTimeout(bubbleTimer);
+                bubbleTimer = setTimeout(function() {
+                    hideBubble();
+                }, 800);
+            });
+
+            heroCat.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                isDragging = true;
+                catMoved = false;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                heroCat.classList.add('dragging');
+                hideBubble();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                const dx = e.clientX - dragStartX;
+                const dy = e.clientY - dragStartY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                    catMoved = true;
+                }
+                catX += dx;
+                catY += dy;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                heroCat.style.transform = 'translate(' + catX + 'px, ' + catY + 'px)';
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    heroCat.classList.remove('dragging');
+                }
+            });
+
+            function showBubble(text) {
+                catBubble.textContent = text;
+                catBubble.classList.add('show');
+            }
+
+            function hideBubble() {
+                catBubble.classList.remove('show');
+            }
+
+            // ============ 彩蛋 ============const brandLogo = document.getElementById('brandLogo');
             const easterEggOverlay = document.getElementById('easterEggOverlay');
             let clickCount = 0;
             let clickTimer = null;
@@ -861,7 +1017,7 @@
             });
 
             function triggerEasterEgg() {
-                const overlay = easterEggOverlay;
+                const overlayEl = easterEggOverlay;
                 const colors = ['#d4a72c', '#7c3aed', '#ec4899', '#06b6d4', '#16161a', '#5a5a6e'];
                 for (let i = 0; i < 60; i++) {
                     const particle = document.createElement('div');
@@ -872,17 +1028,17 @@
                     const ty = Math.sin(angle) * distance;
                     const color = colors[Math.floor(Math.random() * colors.length)];
                     particle.style.cssText = 'left:50%;top:50%;background:' + color + ';width:' + (6 + Math.random() * 14) + 'px;height:' + (6 + Math.random() * 14) + 'px;--tx:' + tx + 'px;--ty:' + ty + 'px;animation-delay:' + (Math.random() * 0.3) + 's;';
-                    overlay.appendChild(particle);
+                    overlayEl.appendChild(particle);
                 }
                 const text = document.createElement('div');
                 text.className = 'easter-egg-text';
                 text.textContent = '时脚本';
-                overlay.appendChild(text);
-                overlay.classList.add('active');
+                overlayEl.appendChild(text);
+                overlayEl.classList.add('active');
                 setTimeout(function() {
-                    overlay.classList.remove('active');
+                    overlayEl.classList.remove('active');
                     setTimeout(function() {
-                        overlay.innerHTML = '';
+                        overlayEl.innerHTML = '';
                         eggTriggered = false;
                     }, 400);
                 }, 2000);
@@ -891,4 +1047,4 @@
     </script>
 
 </body>
-    </html>
+</html>
