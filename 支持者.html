@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>时脚本 · 支持者</title>
+    <meta name="description" content="时脚本 - 支持者列表">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --bg-soft: #f5f5f7;
+            --text: #16161a;
+            --text-secondary: #6e6e7a;
+            --text-tertiary: #9a9aa5;
+            --border: rgba(0, 0, 0, 0.08);
+            --accent: #16161a;
+            --radius-lg: 20px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --spring-medium: cubic-bezier(0.34, 1.4, 0.64, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+
+        /* 顶部导航 */
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            height: 56px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .nav-brand img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .nav-back {
+            padding: 8px 16px;
+            border-radius: 50px;
+            background: var(--bg-soft);
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 
+                transform 0.3s var(--spring-medium),
+                background 0.3s ease,
+                color 0.3s ease;
+        }
+
+        .nav-back:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .nav-back:active {
+            transform: scale(0.92);
+            transition: transform 0.1s ease;
+        }
+
+        /* 主内容 */
+        main {
+            padding-top: 80px;
+            max-width: 700px;
+            margin: 0 auto;
+            padding-left: 16px;
+            padding-right: 16px;
+            padding-bottom: 50px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 6px;
+        }
+
+        .page-header p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        /* 支持者网格 */
+        .supporters-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .supporter-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 14px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            transition: 
+                transform 0.3s var(--spring-medium),
+                box-shadow 0.3s var(--transition);
+            cursor: default;
+            width: 76px;
+        }
+
+        .supporter-card:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .supporter-card:active {
+            transform: scale(0.94);
+            transition: transform 0.1s ease;
+        }
+
+        .supporter-card img {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .supporter-card span {
+            font-size: 0.68rem;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--text-tertiary);
+            font-size: 0.72rem;
+        }
+
+        /* 桌面端 */
+        @media (min-width: 768px) {
+            .nav {
+                padding: 0 48px;
+                height: 64px;
+            }
+
+            .nav-brand {
+                font-size: 1.1rem;
+            }
+
+            .nav-brand img {
+                width: 26px;
+                height: 26px;
+                border-radius: 8px;
+            }
+
+            .nav-back {
+                font-size: 0.88rem;
+                padding: 10px 20px;
+            }
+
+            main {
+                padding-top: 100px;
+                max-width: 900px;
+                padding-left: 32px;
+                padding-right: 32px;
+                padding-bottom: 70px;
+            }
+
+            .page-header h1 {
+                font-size: 2.2rem;
+                letter-spacing: -1.2px;
+            }
+
+            .page-header p {
+                font-size: 1rem;
+            }
+
+            .supporters-grid {
+                gap: 16px;
+            }
+
+            .supporter-card {
+                width: 90px;
+                padding: 18px;
+            }
+
+            .supporter-card img {
+                width: 52px;
+                height: 52px;
+            }
+
+            .supporter-card span {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航 -->
+    <nav class="nav">
+        <a href="你的主页面链接" class="nav-brand">
+            <img src="https://imgs.li/uploads/20260824/f133a3bfb12d3abd6e2c59400358ee8b.jpg" alt="Logo">
+            时脚本
+        </a>
+        <a href="你的主页面链接" class="nav-back">返回主页</a>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <h1>支持者</h1>
+            <p>感谢每一位支持时脚本的人</p>
+        </div>
+
+        <div class="supporters-grid">
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/b1803bd3589cacb11160cdfb6ef98fd9.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/6762e4cdab1258933356809c7d428207.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/13af848fdb6a5b01e6915fd826c5f65a.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/2841996d39a443747d9d93cbd4c4a58d.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/7d15daf404f0484d763e94c392ac0090.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/5041b230ea8f61205631b15f3ab73e91.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/a076ff723141b10e424921d8c3cddf0c.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/c341ccb19cacb24fbe2f80b443919200.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/bbc28379f4c5196ad10432e2d6bb30e3.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/75ada74a212127ca1e5036932f15c0fd.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/a3fb2b6632b875498100481da4c9e1ff.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/524ef288d6ed70ca7d05bcea721c6e75.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/f11492af000bb3497d66520ad16ceecc.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+            <div class="supporter-card">
+                <img src="https://imgs.li/uploads/20260824/c60e38c09fb94b9e82cdee2f7f7fb675.jpg" alt="支持者">
+                <span>支持者</span>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 时脚本 · 支持者页面</p>
+    </footer>
+
+</body>
+  </html>
