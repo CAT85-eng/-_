@@ -367,7 +367,6 @@ local function createInputRow(parent, yPos, labelText, defaultValue, onEnter)
     
     return rowFrame
 end
-
 local function createCollapsible(parent, headerY, title, contentHeight)
     local headerBtn = Instance.new("TextButton")
     headerBtn.Size = UDim2.new(1, -20, 0, 40)
@@ -401,12 +400,22 @@ local function createCollapsible(parent, headerY, title, contentHeight)
         isOpen = not isOpen
         headerBtn.Text = (isOpen and "▲  " or "▼  ") .. title
         local targetHeight = isOpen and contentHeight or 0
+        local offset = isOpen and contentHeight or -contentHeight
+        
         TweenService:Create(contentFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, -20, 0, targetHeight)}):Play()
+        
+        for _, sibling in ipairs(parent:GetChildren()) do
+            if sibling ~= headerBtn and sibling ~= contentFrame and sibling:IsA("GuiObject") then
+                local siblingTop = sibling.Position.Y.Offset
+                if siblingTop >= headerY + 40 then
+                    TweenService:Create(sibling, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0, sibling.Position.X.Offset, 0, siblingTop + offset)}):Play()
+                end
+            end
+        end
     end)
     
     return contentFrame
 end
-
 local fluidGui = Instance.new("ScreenGui")
 fluidGui.Name = "FluidBar"
 fluidGui.Parent = game:GetService("CoreGui")
