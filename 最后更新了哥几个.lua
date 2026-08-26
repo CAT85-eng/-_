@@ -1,14 +1,220 @@
--- ========== 时脚本 · 流体云灵动岛 · 180+功能终极版 ==========
+-- ========== 时脚本 · 流体云灵动岛 · 终极版 ==========
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local player = Players.LocalPlayer
 
-local oldGui = game:GetService("CoreGui"):FindFirstChild("FluidBar")
-if oldGui then oldGui:Destroy() end
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AuroraNotifications"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
+local screenWidth = screenGui.AbsoluteSize.X
+local screenHeight = screenGui.AbsoluteSize.Y
+
+local notifWidth = math.clamp(screenWidth * 0.38, 220, 320)
+local notifHeight = math.clamp(screenHeight * 0.075, 42, 58)
+local notifSpacing = 10
+local margin = math.clamp(screenWidth * 0.025, 12, 24)
+local bottomGap = 4
+
+local COLORS = {
+    background = Color3.fromRGB(18, 15, 28),
+    purpleAccent = Color3.fromRGB(140, 80, 255),
+    purpleGlow = Color3.fromRGB(120, 60, 220),
+    textPrimary = Color3.fromRGB(240, 235, 255),
+    textSecondary = Color3.fromRGB(160, 145, 190),
+    successGreen = Color3.fromRGB(80, 220, 130),
+    errorRed = Color3.fromRGB(255, 90, 100)
+}
+
+local notifContainer = Instance.new("Frame")
+notifContainer.Size = UDim2.new(0, notifWidth, 0, notifHeight * 4 + notifSpacing * 3)
+notifContainer.AnchorPoint = Vector2.new(1, 1)
+notifContainer.Position = UDim2.new(1, -margin, 1, -bottomGap)
+notifContainer.BackgroundTransparency = 1
+notifContainer.BorderSizePixel = 0
+notifContainer.ZIndex = 9999
+notifContainer.Parent = screenGui
+
+local notifList = {}
+
+local function addCorner(parent, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius)
+    corner.Parent = parent
+    return corner
+end
+
+local function updatePositions()
+    local y = -notifHeight
+    for i = #notifList, 1, -1 do
+        local notif = notifList[i]
+        if notif and notif.Parent then
+            TweenService:Create(notif,
+                TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+                {Position = UDim2.new(0, 0, 1, y)}
+            ):Play()
+            y = y - notifHeight - notifSpacing
+        end
+    end
+end
+
+local function showNotification(text, isSuccess, duration)
+    if #notifList >= 4 then
+        local oldest = table.remove(notifList)
+        if oldest and oldest.Parent then
+            oldest:Destroy()
+        end
+    end
+    
+    local accentColor = isSuccess and COLORS.successGreen or COLORS.errorRed
+    
+    local notifFrame = Instance.new("Frame")
+    notifFrame.Size = UDim2.new(0.3, 0, 0, notifHeight)
+    notifFrame.Position = UDim2.new(0, 0, 1, -notifHeight)
+    notifFrame.BackgroundColor3 = COLORS.background
+    notifFrame.BackgroundTransparency = 0.02
+    notifFrame.BorderSizePixel = 0
+    notifFrame.ClipsDescendants = true
+    notifFrame.ZIndex = 10000
+    notifFrame.Parent = notifContainer
+    
+    addCorner(notifFrame, 16)
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1.5
+    stroke.Color = COLORS.purpleGlow
+    stroke.Transparency = 0.4
+    stroke.Parent = notifFrame
+    
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 3, 0.65, 0)
+    accentBar.Position = UDim2.new(0, 10, 0.5, 0)
+    accentBar.AnchorPoint = Vector2.new(0.5, 0.5)
+    accentBar.BackgroundColor3 = COLORS.purpleAccent
+    accentBar.BorderSizePixel = 0
+    accentBar.ZIndex = 10001
+    accentBar.Parent = notifFrame
+    addCorner(accentBar, 2)
+    
+    local iconContainer = Instance.new("Frame")
+    iconContainer.Size = UDim2.new(0, 28, 0, 28)
+    iconContainer.Position = UDim2.new(0, 16, 0.5, -14)
+    iconContainer.BackgroundColor3 = accentColor
+    iconContainer.BackgroundTransparency = 0.85
+    iconContainer.BorderSizePixel = 0
+    iconContainer.ZIndex = 10001
+    iconContainer.Parent = notifFrame
+    addCorner(iconContainer, 14)
+    
+    local iconText = Instance.new("TextLabel")
+    iconText.Size = UDim2.new(1, 0, 1, 0)
+    iconText.BackgroundTransparency = 1
+    iconText.Text = isSuccess and "✓" or "x"
+    iconText.TextColor3 = accentColor
+    iconText.TextSize = isSuccess and 16 or 17
+    iconText.Font = Enum.Font.GothamBold
+    iconText.ZIndex = 10002
+    iconText.Parent = iconContainer
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -60, 0.55, 0)
+    title.Position = UDim2.new(0, 55, 0, 6)
+    title.BackgroundTransparency = 1
+    title.Text = text
+    title.TextColor3 = COLORS.textPrimary
+    title.TextSize = 14
+    title.Font = Enum.Font.GothamBold
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.TextTruncate = Enum.TextTruncate.AtEnd
+    title.ZIndex = 10001
+    title.Parent = notifFrame
+    
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Size = UDim2.new(1, -60, 0.3, 0)
+    subtitle.Position = UDim2.new(0, 55, 0.65, 2)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Text = isSuccess and "Operation Complete" or "Starting Soon"
+    subtitle.TextColor3 = COLORS.textSecondary
+    subtitle.TextSize = 10
+    subtitle.Font = Enum.Font.GothamMedium
+    subtitle.TextXAlignment = Enum.TextXAlignment.Left
+    subtitle.ZIndex = 10001
+    subtitle.Parent = notifFrame
+    
+    notifFrame.BackgroundTransparency = 1
+    title.TextTransparency = 1
+    subtitle.TextTransparency = 1
+    iconText.TextTransparency = 1
+    accentBar.BackgroundTransparency = 1
+    stroke.Transparency = 1
+    
+    table.insert(notifList, 1, notifFrame)
+    
+    TweenService:Create(notifFrame,
+        TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+        {Size = UDim2.new(1, 0, 0, notifHeight)}
+    ):Play()
+    
+    TweenService:Create(notifFrame,
+        TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+        {BackgroundTransparency = 0.02}
+    ):Play()
+    
+    task.delay(0.35, function()
+        TweenService:Create(title, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+        TweenService:Create(subtitle, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+        TweenService:Create(iconText, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+        TweenService:Create(accentBar, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Transparency = 0.4}):Play()
+    end)
+    
+    updatePositions()
+    
+    local displayDuration = duration or 6
+    task.delay(displayDuration, function()
+        if notifFrame.Parent then
+            TweenService:Create(notifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(0.3, 0, 0, notifHeight)}):Play()
+            TweenService:Create(notifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+            TweenService:Create(title, TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+            TweenService:Create(subtitle, TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+            TweenService:Create(iconText, TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+            
+            task.delay(0.5, function()
+                for i, v in ipairs(notifList) do
+                    if v == notifFrame then
+                        table.remove(notifList, i)
+                        break
+                    end
+                end
+                notifFrame:Destroy()
+                updatePositions()
+            end)
+        end
+    end)
+end
+
+task.delay(1, function()
+    showNotification("Script loaded successfully", true, 5)
+end)
+
+task.delay(4, function()
+    showNotification("Loading modules", true, 5)
+end)
+
+task.delay(7, function()
+    showNotification("Anomaly detected", true, 6)
+end)
+
+task.delay(14, function()
+    loadFluidCloud()
+end)
+
+-- ==================== 流体云主体 ====================
 local CONFIG = {
     width = 0.35,
     height = 34,
@@ -23,7 +229,6 @@ local CONFIG = {
     featureCount = 14,
 }
 
--- ==================== 工具函数模块 ====================
 local function createInputBox(parent, position, size, placeholder, defaultValue)
     local inputFrame = Instance.new("Frame")
     inputFrame.Size = size
@@ -89,7 +294,6 @@ local function createToggle(parent, position, size, text, callback)
     toggleLabel.ZIndex = 101
     toggleLabel.Parent = toggleBtn
     
-    -- 外扁内方拨动开关
     local switchFrame = Instance.new("TextButton")
     switchFrame.Size = UDim2.new(0, 36, 0, 24)
     switchFrame.Position = UDim2.new(1, -46, 0.5, -12)
@@ -164,7 +368,6 @@ local function createInputRow(parent, yPos, labelText, defaultValue, onEnter)
     return rowFrame
 end
 
--- ==================== 折叠面板函数 ====================
 local function createCollapsible(parent, headerY, title, contentHeight)
     local headerBtn = Instance.new("TextButton")
     headerBtn.Size = UDim2.new(1, -20, 0, 40)
@@ -204,14 +407,13 @@ local function createCollapsible(parent, headerY, title, contentHeight)
     return contentFrame
 end
 
--- ==================== UI框架 ====================
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "FluidBar"
-screenGui.Parent = game:GetService("CoreGui")
-screenGui.DisplayOrder = 999
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.IgnoreGuiInset = true
+local fluidGui = Instance.new("ScreenGui")
+fluidGui.Name = "FluidBar"
+fluidGui.Parent = game:GetService("CoreGui")
+fluidGui.DisplayOrder = 999
+fluidGui.ResetOnSpawn = false
+fluidGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+fluidGui.IgnoreGuiInset = true
 
 local container = Instance.new("TextButton")
 container.Size = UDim2.new(CONFIG.width, 0, 0, CONFIG.height)
@@ -223,7 +425,7 @@ container.BorderSizePixel = 0
 container.Text = ""
 container.ZIndex = 100
 container.AutoButtonColor = false
-container.Parent = screenGui
+container.Parent = fluidGui
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 17)
@@ -241,14 +443,6 @@ label.TextYAlignment = Enum.TextYAlignment.Center
 label.ZIndex = 101
 label.Parent = container
 
-container.MouseEnter:Connect(function()
-    TweenService:Create(container, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(CONFIG.width + 0.02, 0, 0, CONFIG.height + 4)}):Play()
-end)
-
-container.MouseLeave:Connect(function()
-    TweenService:Create(container, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(CONFIG.width, 0, 0, CONFIG.height)}):Play()
-end)
-
 local panel = Instance.new("Frame")
 panel.Size = UDim2.new(0, 0, 0, 0)
 panel.Position = UDim2.new(0.5, 0, 0, CONFIG.normalY + CONFIG.height + CONFIG.panelOffset)
@@ -259,7 +453,7 @@ panel.BorderSizePixel = 0
 panel.ClipsDescendants = true
 panel.ZIndex = 90
 panel.Visible = false
-panel.Parent = screenGui
+panel.Parent = fluidGui
 
 local panelCorner = Instance.new("UICorner")
 panelCorner.CornerRadius = UDim.new(0, CONFIG.panelCornerRadius)
@@ -310,14 +504,6 @@ local minimizeCorner = Instance.new("UICorner")
 minimizeCorner.CornerRadius = UDim.new(0, 14)
 minimizeCorner.Parent = minimizeBtn
 
-minimizeBtn.MouseEnter:Connect(function()
-    TweenService:Create(minimizeBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(50, 50, 55)}):Play()
-end)
-
-minimizeBtn.MouseLeave:Connect(function()
-    TweenService:Create(minimizeBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(35, 35, 40)}):Play()
-end)
-
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 28, 0, 28)
 closeBtn.Position = UDim2.new(1, -32, 0, 6)
@@ -334,14 +520,6 @@ closeBtn.Parent = topBar
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 14)
 closeCorner.Parent = closeBtn
-
-closeBtn.MouseEnter:Connect(function()
-    TweenService:Create(closeBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(180, 50, 50)}):Play()
-end)
-
-closeBtn.MouseLeave:Connect(function()
-    TweenService:Create(closeBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(35, 35, 40)}):Play()
-end)
 
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, CONFIG.sidebarWidth, 1, -40)
@@ -570,7 +748,6 @@ local function createGeneralPage(card)
     local yPos = 10
     local spacing = 50
     
-    -- 循环恢复血量
     local healLoopActive = false
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "循环恢复血量", function(state)
         healLoopActive = state
@@ -588,7 +765,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 锁定视野
     local lockViewActive = false
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "锁定视野", function(state)
         lockViewActive = state
@@ -618,7 +794,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 解锁最大视野
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "解锁最大视野", function(state)
         local camera = workspace.CurrentCamera
         if camera then
@@ -631,98 +806,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 查看所有玩家
-    local viewPlayersBtn = Instance.new("TextButton")
-    viewPlayersBtn.Size = UDim2.new(1, -20, 0, 40)
-    viewPlayersBtn.Position = UDim2.new(0, 10, 0, yPos)
-    viewPlayersBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-    viewPlayersBtn.BorderSizePixel = 0
-    viewPlayersBtn.Text = "查看所有玩家"
-    viewPlayersBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    viewPlayersBtn.TextSize = 13
-    viewPlayersBtn.Font = Enum.Font.GothamMedium
-    viewPlayersBtn.AutoButtonColor = false
-    viewPlayersBtn.ZIndex = 100
-    viewPlayersBtn.Parent = scrollFrame3
-    
-    local viewCorner = Instance.new("UICorner")
-    viewCorner.CornerRadius = UDim.new(0, 10)
-    viewCorner.Parent = viewPlayersBtn
-    
-    viewPlayersBtn.MouseButton1Click:Connect(function()
-        local playerList = Instance.new("Frame")
-        playerList.Size = UDim2.new(1, -20, 0, 150)
-        playerList.Position = UDim2.new(0, 10, 0, yPos + 45)
-        playerList.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        playerList.BorderSizePixel = 0
-        playerList.ZIndex = 101
-        playerList.Parent = scrollFrame3
-        
-        local listCorner = Instance.new("UICorner")
-        listCorner.CornerRadius = UDim.new(0, 8)
-        listCorner.Parent = playerList
-        
-        local listScroll = Instance.new("ScrollingFrame")
-        listScroll.Size = UDim2.new(1, 0, 1, 0)
-        listScroll.BackgroundTransparency = 1
-        listScroll.BorderSizePixel = 0
-        listScroll.ScrollBarThickness = 4
-        listScroll.CanvasSize = UDim2.new(0, 0, 0, #Players:GetPlayers() * 40)
-        listScroll.ZIndex = 102
-        listScroll.Parent = playerList
-        
-        local listY = 0
-        for _, plr in ipairs(Players:GetPlayers()) do
-            local plrFrame = Instance.new("Frame")
-            plrFrame.Size = UDim2.new(1, -10, 0, 35)
-            plrFrame.Position = UDim2.new(0, 5, 0, listY)
-            plrFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-            plrFrame.BorderSizePixel = 0
-            plrFrame.ZIndex = 103
-            plrFrame.Parent = listScroll
-            
-            local plrCorner = Instance.new("UICorner")
-            plrCorner.CornerRadius = UDim.new(0, 6)
-            plrCorner.Parent = plrFrame
-            
-            local plrName = Instance.new("TextLabel")
-            plrName.Size = UDim2.new(0.6, 0, 1, 0)
-            plrName.BackgroundTransparency = 1
-            plrName.Text = plr.Name
-            plrName.TextColor3 = Color3.fromRGB(255, 255, 255)
-            plrName.TextSize = 12
-            plrName.Font = Enum.Font.GothamMedium
-            plrName.TextXAlignment = Enum.TextXAlignment.Left
-            plrName.ZIndex = 104
-            plrName.Parent = plrFrame
-            
-            local plrHealth = Instance.new("TextLabel")
-            plrHealth.Size = UDim2.new(0.4, 0, 1, 0)
-            plrHealth.Position = UDim2.new(0.6, 0, 0, 0)
-            plrHealth.BackgroundTransparency = 1
-            plrHealth.Text = "血量：加载中..."
-            plrHealth.TextColor3 = Color3.fromRGB(0, 255, 0)
-            plrHealth.TextSize = 11
-            plrHealth.Font = Enum.Font.GothamMedium
-            plrHealth.TextXAlignment = Enum.TextXAlignment.Right
-            plrHealth.ZIndex = 104
-            plrHealth.Parent = plrFrame
-            
-            spawn(function()
-                local humanoid = plr.Character and plr.Character:FindFirstChild("Humanoid")
-                if humanoid then
-                    plrHealth.Text = "血量：" .. math.floor(humanoid.Health) .. "/" .. math.floor(humanoid.MaxHealth)
-                else
-                    plrHealth.Text = "血量：未加载"
-                end
-            end)
-            
-            listY = listY + 40
-        end
-    end)
-    yPos = yPos + spacing
-    
-    -- 自杀
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "自杀", function(state)
         if state then
             local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
@@ -731,7 +814,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 踏空行走
     local airWalkActive = false
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "踏空行走", function(state)
         airWalkActive = state
@@ -756,7 +838,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- ESP透视
     local espActive = false
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "ESP透视", function(state)
         espActive = state
@@ -778,7 +859,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 踢人（娱乐）
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "踢人（娱乐）", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
@@ -794,32 +874,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 爬墙（贴墙）
-    local climbActive = false
-    createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "爬墙", function(state)
-        climbActive = state
-        if state then
-            spawn(function()
-                while climbActive do
-                    local character = player.Character
-                    local humanoid = character and character:FindFirstChild("Humanoid")
-                    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-                    if character and humanoid and rootPart then
-                        if not humanoid.FloorMaterial or humanoid.FloorMaterial == Enum.Material.Air then
-                            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-                            humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-                            rootPart.Velocity = Vector3.new(0, 0, 0)
-                            rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                        end
-                    end
-                    wait()
-                end
-            end)
-        end
-    end)
-    yPos = yPos + spacing
-    
-    -- 隐身
     local invisibleActive = false
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "隐身", function(state)
         invisibleActive = state
@@ -839,7 +893,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 无限跳
     local infiniteJumpActive = false
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "无限跳", function(state)
         infiniteJumpActive = state
@@ -855,7 +908,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 上帝模式
     local godModeActive = false
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "上帝模式", function(state)
         godModeActive = state
@@ -872,37 +924,12 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 螺旋上天（不爆体）
-    createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "螺旋上天", function(state)
-        if state then
-            local character = player.Character
-            local humanoid = character and character:FindFirstChild("Humanoid")
-            local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-            if humanoid and rootPart then
-                humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-                humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-                spawn(function()
-                    for i = 1, 30 do
-                        if not state then break end
-                        rootPart.CFrame = rootPart.CFrame * CFrame.new(0, 3, 0) * CFrame.Angles(0, 0.3, 0)
-                        wait(0.05)
-                    end
-                    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
-                end)
-            end
-        end
-    end)
-    yPos = yPos + spacing
-    
-    -- 坐下
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "坐下", function(state)
         local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
         if humanoid then humanoid.Sit = state end
     end)
     yPos = yPos + spacing
     
-    -- 声音折磨（能关）
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "声音折磨", function(state)
         if state then
             local sound = Instance.new("Sound")
@@ -919,7 +946,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 七彩建筑（关闭恢复）
     local rainbowActive = false
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "七彩建筑", function(state)
         rainbowActive = state
@@ -944,7 +970,28 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 万能锤子
+    createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "螺旋上天", function(state)
+        if state then
+            local character = player.Character
+            local humanoid = character and character:FindFirstChild("Humanoid")
+            local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+            if humanoid and rootPart then
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+                spawn(function()
+                    for i = 1, 30 do
+                        if not state then break end
+                        rootPart.CFrame = rootPart.CFrame * CFrame.new(0, 3, 0) * CFrame.Angles(0, 0.3, 0)
+                        wait(0.05)
+                    end
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+                end)
+            end
+        end
+    end)
+    yPos = yPos + spacing
+    
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "万能锤子", function(state)
         if state then
             local hammer = Instance.new("Tool")
@@ -959,7 +1006,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 全地图发光
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "全地图发光", function(state)
         if state then
             Lighting.Brightness = 3
@@ -971,66 +1017,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 传送工具
-    createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "传送工具", function(state)
-        if state then
-            local teleTool = Instance.new("Tool")
-            teleTool.Name = "传送工具"
-            teleTool.RequiresHandle = true
-            local handle = Instance.new("Part")
-            handle.Name = "Handle"
-            handle.Size = Vector3.new(2, 2, 2)
-            handle.Parent = teleTool
-            
-            teleTool.Activated:Connect(function()
-                local character = player.Character
-                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-                if rootPart then
-                    local mouse = player:GetMouse()
-                    rootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
-                end
-            end)
-            
-            teleTool.Parent = player.Backpack
-        end
-    end)
-    yPos = yPos + spacing
-    
-    -- 定位玩家
-    createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "定位玩家", function(state)
-        if state then
-            for _, plr in ipairs(Players:GetPlayers()) do
-                if plr ~= player and plr.Character then
-                    local rootPart = plr.Character:FindFirstChild("HumanoidRootPart")
-                    local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                    if rootPart and myRoot then
-                        myRoot.CFrame = rootPart.CFrame + Vector3.new(0, 3, 0)
-                    end
-                end
-            end
-        end
-    end)
-    yPos = yPos + spacing
-    
-    -- 传送玩家
-    createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "传送玩家", function(state)
-        if state then
-            local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if myRoot then
-                for _, plr in ipairs(Players:GetPlayers()) do
-                    if plr ~= player and plr.Character then
-                        local rootPart = plr.Character:FindFirstChild("HumanoidRootPart")
-                        if rootPart then
-                            rootPart.CFrame = myRoot.CFrame + Vector3.new(0, 2, 0)
-                        end
-                    end
-                end
-            end
-        end
-    end)
-    yPos = yPos + spacing
-    
-    -- 防被甩飞
     local antiYeetActive = false
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "防被甩飞", function(state)
         antiYeetActive = state
@@ -1052,7 +1038,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 点击甩飞
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "点击甩飞", function(state)
         if state then
             local mouse = player:GetMouse()
@@ -1069,7 +1054,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 重新加入游戏
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "重新加入游戏", function(state)
         if state then
             game:GetService("TeleportService"):Teleport(game.PlaceId, player)
@@ -1077,7 +1061,6 @@ local function createGeneralPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 离开游戏
     createToggle(scrollFrame3, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "离开游戏", function(state)
         if state then
             game:Shutdown()
@@ -1097,121 +1080,69 @@ local function createRotateRangePage(card)
     scrollFrame4.Parent = card
     
     local yPos = 10
-    local spacing = 50
     
-    -- ============ 头部范围（折叠） ============
     local headContent = createCollapsible(scrollFrame4, yPos, "头部范围", 300)
-    
     local headY = 5
     createInputRow(headContent, headY, "头部大小：", "1", function(value)
         local character = player.Character
         if character then
             local head = character:FindFirstChild("Head")
-            if head then
-                head.Size = Vector3.new(value, value, value)
-            end
+            if head then head.Size = Vector3.new(value, value, value) end
         end
     end)
     headY = headY + 40
-    
-    createToggle(headContent, UDim2.new(0, 0, 0, headY), UDim2.new(1, 0, 0, 35), "启用头部碰撞箱", function(state)
-        local character = player.Character
-        if character then
-            local head = character:FindFirstChild("Head")
-            if head then
-                head.CanCollide = state
-            end
-        end
+    createToggle(headContent, UDim2.new(0, 0, 0, headY), UDim2.new(1, 0, 0, 40), "启用头部碰撞箱", function(state)
+        local head = player.Character and player.Character:FindFirstChild("Head")
+        if head then head.CanCollide = state end
     end)
-    headY = headY + 40
-    
-    createToggle(headContent, UDim2.new(0, 0, 0, headY), UDim2.new(1, 0, 0, 35), "头部颜色", function(state)
-        local character = player.Character
-        if character then
-            local head = character:FindFirstChild("Head")
-            if head then
-                head.Color = state and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(163, 162, 165)
-            end
-        end
+    headY = headY + 45
+    createToggle(headContent, UDim2.new(0, 0, 0, headY), UDim2.new(1, 0, 0, 40), "头部颜色", function(state)
+        local head = player.Character and player.Character:FindFirstChild("Head")
+        if head then head.Color = state and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(163, 162, 165) end
     end)
-    headY = headY + 40
-    
-    createToggle(headContent, UDim2.new(0, 0, 0, headY), UDim2.new(1, 0, 0, 35), "头部透明", function(state)
-        local character = player.Character
-        if character then
-            local head = character:FindFirstChild("Head")
-            if head then
-                head.Transparency = state and 0.5 or 0
-            end
-        end
+    headY = headY + 45
+    createToggle(headContent, UDim2.new(0, 0, 0, headY), UDim2.new(1, 0, 0, 40), "头部透明", function(state)
+        local head = player.Character and player.Character:FindFirstChild("Head")
+        if head then head.Transparency = state and 0.5 or 0 end
     end)
     
     yPos = yPos + 50
     
-    -- ============ 范围（折叠） ============
     local rangeContent = createCollapsible(scrollFrame4, yPos, "范围", 500)
-    
     local rangeY = 5
-    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 35), "开启范围", function(state)
-        -- 范围逻辑
-    end)
+    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 40), "开启范围", function(state) end)
+    rangeY = rangeY + 45
+    createInputRow(rangeContent, rangeY, "范围大小：", "10", function(value) end)
     rangeY = rangeY + 40
-    
-    createInputRow(rangeContent, rangeY, "范围大小：", "10", function(value)
-        -- 设置范围大小
-    end)
+    createInputRow(rangeContent, rangeY, "范围透明度：", "0.5", function(value) end)
     rangeY = rangeY + 40
-    
-    createInputRow(rangeContent, rangeY, "范围透明度：", "0.5", function(value)
-        -- 设置范围透明度
-    end)
-    rangeY = rangeY + 40
-    
-    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 35), "NPC范围", function(state) end)
-    rangeY = rangeY + 40
-    
-    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 35), "队伍检测", function(state) end)
-    rangeY = rangeY + 40
-    
-    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 35), "活体检测", function(state) end)
-    rangeY = rangeY + 40
-    
-    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 35), "显示轮廓", function(state) end)
-    rangeY = rangeY + 40
-    
-    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 35), "禁用碰撞", function(state) end)
-    rangeY = rangeY + 40
-    
-    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 35), "发光效果", function(state) end)
-    rangeY = rangeY + 40
-    
-    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 35), "脉动效果", function(state) end)
+    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 40), "NPC范围", function(state) end)
+    rangeY = rangeY + 45
+    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 40), "队伍检测", function(state) end)
+    rangeY = rangeY + 45
+    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 40), "活体检测", function(state) end)
+    rangeY = rangeY + 45
+    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 40), "显示轮廓", function(state) end)
+    rangeY = rangeY + 45
+    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 40), "禁用碰撞", function(state) end)
+    rangeY = rangeY + 45
+    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 40), "发光效果", function(state) end)
+    rangeY = rangeY + 45
+    createToggle(rangeContent, UDim2.new(0, 0, 0, rangeY), UDim2.new(1, 0, 0, 40), "脉动效果", function(state) end)
     
     yPos = yPos + 50
     
-    -- ============ 旋转（折叠） ============
     local rotateContent = createCollapsible(scrollFrame4, yPos, "旋转", 200)
-    
     local rotateY = 5
-    createInputRow(rotateContent, rotateY, "旋转速度：", "10", function(value)
-        -- 设置旋转速度
-    end)
+    createInputRow(rotateContent, rotateY, "旋转速度：", "10", function(value) end)
     rotateY = rotateY + 40
-    
-    createToggle(rotateContent, UDim2.new(0, 0, 0, rotateY), UDim2.new(1, 0, 0, 35), "旋转方向", function(state)
-        -- 旋转方向逻辑
-    end)
-    rotateY = rotateY + 40
-    
-    createToggle(rotateContent, UDim2.new(0, 0, 0, rotateY), UDim2.new(1, 0, 0, 35), "旋转轴", function(state)
-        -- 旋转轴逻辑
-    end)
-    rotateY = rotateY + 40
-    
-    createToggle(rotateContent, UDim2.new(0, 0, 0, rotateY), UDim2.new(1, 0, 0, 35), "开启旋转", function(state)
-        -- 开启旋转逻辑
-    end)
+    createToggle(rotateContent, UDim2.new(0, 0, 0, rotateY), UDim2.new(1, 0, 0, 40), "旋转方向", function(state) end)
+    rotateY = rotateY + 45
+    createToggle(rotateContent, UDim2.new(0, 0, 0, rotateY), UDim2.new(1, 0, 0, 40), "旋转轴", function(state) end)
+    rotateY = rotateY + 45
+    createToggle(rotateContent, UDim2.new(0, 0, 0, rotateY), UDim2.new(1, 0, 0, 40), "开启旋转", function(state) end)
 end
+
 -- ==================== 传送与甩飞模块 ====================
 local function createTeleportYeetPage(card)
     local scrollFrame5 = Instance.new("ScrollingFrame")
@@ -1225,40 +1156,20 @@ local function createTeleportYeetPage(card)
     scrollFrame5.Parent = card
     
     local yPos = 10
-    local spacing = 50
     
-    -- ============ 甩飞（折叠） ============
     local yeetContent = createCollapsible(scrollFrame5, yPos, "甩飞", 400)
-    
     local yeetY = 5
-    createToggle(yeetContent, UDim2.new(0, 0, 0, yeetY), UDim2.new(1, 0, 0, 35), "选择玩家", function(state)
-        -- 选择玩家逻辑
-    end)
+    createToggle(yeetContent, UDim2.new(0, 0, 0, yeetY), UDim2.new(1, 0, 0, 40), "选择玩家", function(state) end)
+    yeetY = yeetY + 45
+    createToggle(yeetContent, UDim2.new(0, 0, 0, yeetY), UDim2.new(1, 0, 0, 40), "显示名称类型", function(state) end)
+    yeetY = yeetY + 45
+    createToggle(yeetContent, UDim2.new(0, 0, 0, yeetY), UDim2.new(1, 0, 0, 40), "刷新玩家列表", function(state) end)
+    yeetY = yeetY + 45
+    createToggle(yeetContent, UDim2.new(0, 0, 0, yeetY), UDim2.new(1, 0, 0, 40), "自动刷新玩家列表", function(state) end)
+    yeetY = yeetY + 45
+    createInputRow(yeetContent, yeetY, "刷新间隔：", "5", function(value) end)
     yeetY = yeetY + 40
     
-    createToggle(yeetContent, UDim2.new(0, 0, 0, yeetY), UDim2.new(1, 0, 0, 35), "显示名称类型", function(state)
-        -- 名称类型切换
-    end)
-    yeetY = yeetY + 40
-    
-    createToggle(yeetContent, UDim2.new(0, 0, 0, yeetY), UDim2.new(1, 0, 0, 35), "刷新玩家列表", function(state)
-        if state then
-            -- 刷新列表
-        end
-    end)
-    yeetY = yeetY + 40
-    
-    createToggle(yeetContent, UDim2.new(0, 0, 0, yeetY), UDim2.new(1, 0, 0, 35), "自动刷新玩家列表", function(state)
-        -- 自动刷新逻辑
-    end)
-    yeetY = yeetY + 40
-    
-    createInputRow(yeetContent, yeetY, "刷新间隔：", "5", function(value)
-        -- 刷新间隔
-    end)
-    yeetY = yeetY + 40
-    
-    -- 甩飞按钮
     local yeetBtn = Instance.new("TextButton")
     yeetBtn.Size = UDim2.new(1, 0, 0, 40)
     yeetBtn.Position = UDim2.new(0, 0, 0, yeetY)
@@ -1290,21 +1201,13 @@ local function createTeleportYeetPage(card)
     
     yPos = yPos + 50
     
-    -- ============ 距离方向（折叠） ============
     local distanceContent = createCollapsible(scrollFrame5, yPos, "距离方向", 300)
-    
     local distY = 5
-    createToggle(distanceContent, UDim2.new(0, 0, 0, distY), UDim2.new(1, 0, 0, 35), "选择传送吸人方向", function(state)
-        -- 方向选择
-    end)
+    createToggle(distanceContent, UDim2.new(0, 0, 0, distY), UDim2.new(1, 0, 0, 40), "选择传送吸人方向", function(state) end)
+    distY = distY + 45
+    createInputRow(distanceContent, distY, "传送吸人距离：", "3", function(value) end)
     distY = distY + 40
-    
-    createInputRow(distanceContent, distY, "传送吸人距离：", "3", function(value)
-        -- 传送距离设置
-    end)
-    distY = distY + 40
-    
-    createToggle(distanceContent, UDim2.new(0, 0, 0, distY), UDim2.new(1, 0, 0, 35), "传送玩家到旁边", function(state)
+    createToggle(distanceContent, UDim2.new(0, 0, 0, distY), UDim2.new(1, 0, 0, 40), "传送玩家到旁边", function(state)
         if state then
             local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if myRoot then
@@ -1319,27 +1222,18 @@ local function createTeleportYeetPage(card)
             end
         end
     end)
-    distY = distY + 40
-    
-    createToggle(distanceContent, UDim2.new(0, 0, 0, distY), UDim2.new(1, 0, 0, 35), "循环锁定传送", function(state)
-        -- 循环传送逻辑
-    end)
-    distY = distY + 40
-    
-    createToggle(distanceContent, UDim2.new(0, 0, 0, distY), UDim2.new(1, 0, 0, 35), "循环传送玩家过来", function(state)
-        -- 循环传送过来
-    end)
+    distY = distY + 45
+    createToggle(distanceContent, UDim2.new(0, 0, 0, distY), UDim2.new(1, 0, 0, 40), "循环锁定传送", function(state) end)
+    distY = distY + 45
+    createToggle(distanceContent, UDim2.new(0, 0, 0, distY), UDim2.new(1, 0, 0, 40), "循环传送玩家过来", function(state) end)
     
     yPos = yPos + 50
     
-    -- ============ 其他（折叠） ============
     local otherContent = createCollapsible(scrollFrame5, yPos, "其他", 200)
-    
     local otherY = 5
-    createToggle(otherContent, UDim2.new(0, 0, 0, otherY), UDim2.new(1, 0, 0, 35), "开启指定自瞄目标", function(state) end)
-    otherY = otherY + 40
-    
-    createToggle(otherContent, UDim2.new(0, 0, 0, otherY), UDim2.new(1, 0, 0, 35), "吸附全部玩家", function(state)
+    createToggle(otherContent, UDim2.new(0, 0, 0, otherY), UDim2.new(1, 0, 0, 40), "开启指定自瞄目标", function(state) end)
+    otherY = otherY + 45
+    createToggle(otherContent, UDim2.new(0, 0, 0, otherY), UDim2.new(1, 0, 0, 40), "吸附全部玩家", function(state)
         if state then
             local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if myRoot then
@@ -1354,10 +1248,81 @@ local function createTeleportYeetPage(card)
             end
         end
     end)
-    otherY = otherY + 40
-    
-    createToggle(otherContent, UDim2.new(0, 0, 0, otherY), UDim2.new(1, 0, 0, 35), "查看玩家", function(state) end)
+    otherY = otherY + 45
+    createToggle(otherContent, UDim2.new(0, 0, 0, otherY), UDim2.new(1, 0, 0, 40), "查看玩家", function(state) end)
 end
+-- ==================== 自动说话模块 ====================
+local function createAutoChatPage(card)
+    local scrollFrame6 = Instance.new("ScrollingFrame")
+    scrollFrame6.Size = UDim2.new(1, 0, 1, 0)
+    scrollFrame6.BackgroundTransparency = 1
+    scrollFrame6.BorderSizePixel = 0
+    scrollFrame6.ScrollBarThickness = 4
+    scrollFrame6.ScrollingDirection = Enum.ScrollingDirection.Y
+    scrollFrame6.CanvasSize = UDim2.new(0, 0, 0, 1200)
+    scrollFrame6.ZIndex = 98
+    scrollFrame6.Parent = card
+    
+    local yPos = 10
+    
+    local chatContent = createCollapsible(scrollFrame6, yPos, "自动说话", 500)
+    local chatY = 5
+    createInputRow(chatContent, chatY, "说话内容：", "你好", function(value) end)
+    chatY = chatY + 40
+    createInputRow(chatContent, chatY, "说话次数：", "10", function(value) end)
+    chatY = chatY + 40
+    createInputRow(chatContent, chatY, "说话间隔：", "1", function(value) end)
+    chatY = chatY + 40
+    createToggle(chatContent, UDim2.new(0, 0, 0, chatY), UDim2.new(1, 0, 0, 40), "开始说话", function(state)
+        if state then
+            spawn(function()
+                while state do
+                    game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest"):FireServer("你好", "All")
+                    wait(1)
+                end
+            end)
+        end
+    end)
+    chatY = chatY + 45
+    createToggle(chatContent, UDim2.new(0, 0, 0, chatY), UDim2.new(1, 0, 0, 40), "停止说话", function(state) end)
+    chatY = chatY + 45
+    createInputRow(chatContent, chatY, "全自动间隔：", "5", function(value) end)
+    chatY = chatY + 40
+    createToggle(chatContent, UDim2.new(0, 0, 0, chatY), UDim2.new(1, 0, 0, 40), "全自动说话", function(state)
+        if state then
+            spawn(function()
+                local messages = {"你好", "在吗", "哈哈", "666"}
+                local index = 1
+                while state do
+                    game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest"):FireServer(messages[index], "All")
+                    index = index + 1
+                    if index > #messages then index = 1 end
+                    wait(5)
+                end
+            end)
+        end
+    end)
+    
+    yPos = yPos + 50
+    
+    local insultContent = createCollapsible(scrollFrame6, yPos, "骂人区", 500)
+    local insultY = 5
+    local insultList = {"三字经", "四字成语", "骂人语录", "嘲讽语录", "素质连喷", "国际问候", "诅咒系列", "人身攻击", "终极嘲讽"}
+    for _, insult in ipairs(insultList) do
+        createToggle(insultContent, UDim2.new(0, 0, 0, insultY), UDim2.new(1, 0, 0, 40), insult, function(state)
+            if state then
+                spawn(function()
+                    while state do
+                        game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest"):FireServer(insult, "All")
+                        wait(3)
+                    end
+                end)
+            end
+        end)
+        insultY = insultY + 45
+    end
+end
+
 -- ==================== 时间透视模块 ====================
 local function createTimePage(card)
     local scrollFrame7 = Instance.new("ScrollingFrame")
@@ -1371,9 +1336,7 @@ local function createTimePage(card)
     scrollFrame7.Parent = card
     
     local yPos = 10
-    local spacing = 50
     
-    -- ============ 时间 ============
     createToggle(scrollFrame7, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "显示时间", function(state)
         if state then
             local timeLabel = Instance.new("TextLabel")
@@ -1399,47 +1362,29 @@ local function createTimePage(card)
             if timeLabel then timeLabel:Destroy() end
         end
     end)
-    yPos = yPos + spacing
+    yPos = yPos + 50
     
-    createInputRow(scrollFrame7, yPos, "时间格式：", "24", function(value)
-        -- 时间格式
-    end)
+    createInputRow(scrollFrame7, yPos, "时间格式：", "24", function(value) end)
     yPos = yPos + 40
     
-    -- ============ 闹铃（折叠） ============
     local alarmContent = createCollapsible(scrollFrame7, yPos, "闹铃", 500)
-    
     local alarmY = 5
-    
-    createInputRow(alarmContent, alarmY, "闹铃时间：", "12:00", function(value)
-        -- 设置闹铃时间
-    end)
+    createInputRow(alarmContent, alarmY, "闹铃时间：", "12:00", function(value) end)
     alarmY = alarmY + 40
-    
-    createInputRow(alarmContent, alarmY, "稍后提醒：", "5", function(value)
-        -- 稍后提醒时间
-    end)
+    createInputRow(alarmContent, alarmY, "稍后提醒：", "5", function(value) end)
     alarmY = alarmY + 40
-    
-    createInputRow(alarmContent, alarmY, "闹钟音量：", "5", function(value)
-        -- 闹钟音量
-    end)
+    createInputRow(alarmContent, alarmY, "闹钟音量：", "5", function(value) end)
     alarmY = alarmY + 40
-    
-    createInputRow(alarmContent, alarmY, "声音ID：", "", function(value)
-        -- 设置闹钟声音ID
-    end)
+    createInputRow(alarmContent, alarmY, "声音ID：", "", function(value) end)
     alarmY = alarmY + 40
-    
-    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 35), "停止闹钟声音", function(state)
+    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 40), "停止闹钟声音", function(state)
         if state then
             local sound = player.PlayerGui:FindFirstChild("AlarmSound")
             if sound then sound:Destroy() end
         end
     end)
-    alarmY = alarmY + 40
-    
-    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 35), "稍后提醒", function(state)
+    alarmY = alarmY + 45
+    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 40), "稍后提醒", function(state)
         if state then
             spawn(function()
                 task.wait(300)
@@ -1452,31 +1397,12 @@ local function createTimePage(card)
             end)
         end
     end)
-    alarmY = alarmY + 40
-    
-    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 35), "查看当前闹钟", function(state)
-        if state then
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "当前闹钟",
-                Text = "无闹钟",
-                Duration = 2,
-            })
-        end
-    end)
-    alarmY = alarmY + 40
-    
-    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 35), "所有闹钟开关", function(state) end)
-    alarmY = alarmY + 40
-    
-    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 35), "清除所有闹钟", function(state)
-        if state then
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "闹钟",
-                Text = "已清除所有闹钟",
-                Duration = 2,
-            })
-        end
-    end)
+    alarmY = alarmY + 45
+    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 40), "查看当前闹钟", function(state) end)
+    alarmY = alarmY + 45
+    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 40), "所有闹钟开关", function(state) end)
+    alarmY = alarmY + 45
+    createToggle(alarmContent, UDim2.new(0, 0, 0, alarmY), UDim2.new(1, 0, 0, 40), "清除所有闹钟", function(state) end)
 end
 -- ==================== 自瞄模块 ====================
 local function createAimbotPage(card)
@@ -1491,163 +1417,187 @@ local function createAimbotPage(card)
     scrollFrame8.Parent = card
     
     local yPos = 10
-    local spacing = 50
     
-    -- ============ 自瞄（折叠） ============
     local aimbotContent = createCollapsible(scrollFrame8, yPos, "自瞄", 2000)
-    
     local aimY = 5
     
     local aimbotActive = false
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "开启自瞄", function(state)
+    local aimbotDistance = 200
+    local smoothAim = false
+    local smoothAmount = 5
+    local aimbotPart = "Head"
+    local wallCheck = false
+    local teamCheck = false
+    local aliveCheck = true
+    
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "开启自瞄", function(state)
         aimbotActive = state
         if state then
             spawn(function()
                 while aimbotActive do
                     local closest = nil
-                    local closestDist = math.huge
+                    local closestDist = aimbotDistance
                     local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                     
                     for _, plr in ipairs(Players:GetPlayers()) do
                         if plr ~= player and plr.Character then
-                            local rootPart = plr.Character:FindFirstChild("HumanoidRootPart")
                             local humanoid = plr.Character:FindFirstChild("Humanoid")
-                            if rootPart and humanoid and humanoid.Health > 0 and myRoot then
-                                local dist = (rootPart.Position - myRoot.Position).Magnitude
+                            local targetPart = plr.Character:FindFirstChild(aimbotPart) or plr.Character:FindFirstChild("HumanoidRootPart")
+                            
+                            if humanoid and targetPart and myRoot then
+                                if aliveCheck and humanoid.Health <= 0 then continue end
+                                
+                                local dist = (targetPart.Position - myRoot.Position).Magnitude
                                 if dist < closestDist then
                                     closestDist = dist
-                                    closest = rootPart
+                                    closest = targetPart
                                 end
                             end
                         end
                     end
                     
                     if closest and myRoot then
-                        myRoot.CFrame = CFrame.new(myRoot.Position, closest.Position)
+                        if smoothAim then
+                            local lookAt = CFrame.lookAt(myRoot.Position, closest.Position)
+                            myRoot.CFrame = myRoot.CFrame:Lerp(lookAt, smoothAmount / 10)
+                        else
+                            myRoot.CFrame = CFrame.lookAt(myRoot.Position, closest.Position)
+                        end
                     end
-                    wait(0.05)
+                    wait()
                 end
             end)
         end
     end)
+    aimY = aimY + 45
+    
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "锁定模式", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "显示自瞄快捷悬浮窗", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "锁定悬浮窗位置", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "移动时暂停自瞄", function(state) end)
+    aimY = aimY + 45
+    createInputRow(aimbotContent, aimY, "自瞄距离：", "200", function(value)
+        aimbotDistance = value
+    end)
     aimY = aimY + 40
     
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "锁定模式", function(state) end)
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "平滑自瞄", function(state)
+        smoothAim = state
+    end)
+    aimY = aimY + 45
+    createInputRow(aimbotContent, aimY, "平滑度：", "5", function(value)
+        smoothAmount = value
+    end)
     aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "显示自瞄快捷悬浮窗", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "锁定悬浮窗位置", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "移动时暂停自瞄", function(state) end)
-    aimY = aimY + 40
-    
-    createInputRow(aimbotContent, aimY, "自瞄距离：", "100", function(value) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "平滑自瞄", function(state) end)
-    aimY = aimY + 40
-    
-    createInputRow(aimbotContent, aimY, "平滑度：", "5", function(value) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "预判自瞄", function(state) end)
-    aimY = aimY + 40
-    
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "预判自瞄", function(state) end)
+    aimY = aimY + 45
     createInputRow(aimbotContent, aimY, "预判距离：", "10", function(value) end)
     aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "范围限制", function(state) end)
-    aimY = aimY + 40
-    
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "范围限制", function(state) end)
+    aimY = aimY + 45
     createInputRow(aimbotContent, aimY, "视野角度：", "90", function(value) end)
     aimY = aimY + 40
     
-    -- 自瞄部位（折叠）
     local bodyPartContent = createCollapsible(aimbotContent, aimY, "自瞄部位", 300)
     local bodyY = 5
-    local bodyParts = {"头部", "躯干", "左手", "右手", "左腿", "右腿", "HumanoidRootPart"}
-    for _, part in ipairs(bodyParts) do
-        createToggle(bodyPartContent, UDim2.new(0, 0, 0, bodyY), UDim2.new(1, 0, 0, 30), part, function(state) end)
-        bodyY = bodyY + 35
+    local bodyParts = {"Head", "HumanoidRootPart", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+    local bodyPartNames = {"头部", "躯干", "身体", "左手", "右手", "左腿", "右腿"}
+    for i, part in ipairs(bodyParts) do
+        createToggle(bodyPartContent, UDim2.new(0, 0, 0, bodyY), UDim2.new(1, 0, 0, 35), bodyPartNames[i], function(state)
+            if state then
+                aimbotPart = part
+            end
+        end)
+        bodyY = bodyY + 40
     end
     aimY = aimY + 50
     
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "队伍检测", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "活体检测", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "墙壁检测", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "好友检测", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "自瞄NPC", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "优先瞄准", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "准心偏移", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "开启准心偏移", function(state) end)
-    aimY = aimY + 40
-    
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "队伍检测", function(state)
+        teamCheck = state
+    end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "活体检测", function(state)
+        aliveCheck = state
+    end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "墙壁检测", function(state)
+        wallCheck = state
+    end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "好友检测", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "自瞄NPC", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "优先瞄准", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "准心偏移", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "开启准心偏移", function(state) end)
+    aimY = aimY + 45
     createInputRow(aimbotContent, aimY, "偏移X轴：", "0", function(value) end)
     aimY = aimY + 40
-    
     createInputRow(aimbotContent, aimY, "偏移Y轴：", "0", function(value) end)
     aimY = aimY + 40
     
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "FOV圈", function(state) end)
+    -- FOV圈（Drawing绘制）
+    local fovCircleActive = false
+    local fovCircleSize = 100
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "显示FOV圈", function(state)
+        fovCircleActive = state
+        if state then
+            spawn(function()
+                local circle = Drawing.new("Circle")
+                circle.Visible = true
+                circle.Radius = fovCircleSize
+                circle.Thickness = 2
+                circle.Color = Color3.fromRGB(255, 255, 255)
+                circle.Transparency = 0.5
+                
+                while fovCircleActive do
+                    local camera = workspace.CurrentCamera
+                    if camera then
+                        circle.Position = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+                    end
+                    wait()
+                end
+                
+                circle:Remove()
+            end)
+        end
+    end)
+    aimY = aimY + 45
+    createInputRow(aimbotContent, aimY, "FOV圈大小：", "100", function(value)
+        fovCircleSize = value
+    end)
     aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "显示FOV圈", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "FOV圈跟随", function(state) end)
-    aimY = aimY + 40
-    
-    createInputRow(aimbotContent, aimY, "FOV圈大小：", "100", function(value) end)
-    aimY = aimY + 40
-    
     createInputRow(aimbotContent, aimY, "FOV圈厚度：", "2", function(value) end)
     aimY = aimY + 40
-    
     createInputRow(aimbotContent, aimY, "FOV圈透明度：", "0.5", function(value) end)
     aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "FOV圈颜色", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "显示目标射线", function(state) end)
-    aimY = aimY + 40
-    
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "FOV圈颜色", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "FOV圈跟随", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "显示目标射线", function(state) end)
+    aimY = aimY + 45
     createInputRow(aimbotContent, aimY, "射线厚度：", "1", function(value) end)
     aimY = aimY + 40
-    
     createInputRow(aimbotContent, aimY, "射线透明度：", "0.5", function(value) end)
     aimY = aimY + 40
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "射线颜色", function(state) end)
+    aimY = aimY + 45
+    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 40), "显示距离", function(state) end)
+    aimY = aimY + 45
     
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "射线颜色", function(state) end)
-    aimY = aimY + 40
-    
-    createToggle(aimbotContent, UDim2.new(0, 0, 0, aimY), UDim2.new(1, 0, 0, 35), "显示距离", function(state) end)
-    aimY = aimY + 40
-    
-    -- 准心（折叠）
     local crosshairContent = createCollapsible(aimbotContent, aimY, "准心", 200)
     local crossY = 5
-    createToggle(crosshairContent, UDim2.new(0, 0, 0, crossY), UDim2.new(1, 0, 0, 30), "显示准心", function(state) end)
-    crossY = crossY + 35
+    createToggle(crosshairContent, UDim2.new(0, 0, 0, crossY), UDim2.new(1, 0, 0, 35), "显示准心", function(state) end)
+    crossY = crossY + 40
     createInputRow(crosshairContent, crossY, "准心大小：", "10", function(value) end)
-    crossY = crossY + 35
+    crossY = crossY + 40
     createInputRow(crosshairContent, crossY, "准心颜色：", "白色", function(value) end)
 end
 -- ==================== 动画模块 ====================
@@ -1663,14 +1613,11 @@ local function createAnimationPage(card)
     scrollFrame9.Parent = card
     
     local yPos = 10
-    local spacing = 50
     
-    -- ============ 动画（折叠） ============
     local animContent = createCollapsible(scrollFrame9, yPos, "动画", 700)
-    
     local animY = 5
     
-    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 35), "播放动画", function(state)
+    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 40), "播放动画", function(state)
         if state then
             local character = player.Character
             local humanoid = character and character:FindFirstChild("Humanoid")
@@ -1682,26 +1629,22 @@ local function createAnimationPage(card)
             end
         end
     end)
-    animY = animY + 40
-    
-    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 35), "选择服务器动画", function(state) end)
-    animY = animY + 40
-    
-    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 35), "刷新服务器动画列表", function(state)
+    animY = animY + 45
+    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 40), "选择服务器动画", function(state) end)
+    animY = animY + 45
+    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 40), "刷新服务器动画列表", function(state)
         if state then
             local character = player.Character
             local humanoid = character and character:FindFirstChild("Humanoid")
             if humanoid then
-                local anims = humanoid:GetPlayingAnimationTracks()
-                for _, track in ipairs(anims) do
+                for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
                     track:Stop()
                 end
             end
         end
     end)
-    animY = animY + 40
+    animY = animY + 45
     
-    -- 内置动画（折叠）
     local builtinContent = createCollapsible(animContent, animY, "内置动画", 400)
     local builtinY = 5
     local builtinAnims = {
@@ -1714,9 +1657,8 @@ local function createAnimationPage(card)
         {"嘲笑", "rbxassetid://507771019"},
         {"睡觉", "rbxassetid://507771524"},
     }
-    
     for _, animData in ipairs(builtinAnims) do
-        createToggle(builtinContent, UDim2.new(0, 0, 0, builtinY), UDim2.new(1, 0, 0, 30), animData[1], function(state)
+        createToggle(builtinContent, UDim2.new(0, 0, 0, builtinY), UDim2.new(1, 0, 0, 35), animData[1], function(state)
             if state then
                 local character = player.Character
                 local humanoid = character and character:FindFirstChild("Humanoid")
@@ -1728,7 +1670,7 @@ local function createAnimationPage(card)
                 end
             end
         end)
-        builtinY = builtinY + 35
+        builtinY = builtinY + 40
     end
     animY = animY + 50
     
@@ -1743,10 +1685,8 @@ local function createAnimationPage(card)
         end
     end)
     animY = animY + 40
-    
-    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 35), "复制当前动画ID", function(state) end)
-    animY = animY + 40
-    
+    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 40), "复制当前动画ID", function(state) end)
+    animY = animY + 45
     createInputRow(animContent, animY, "播放速度：", "1", function(value)
         local character = player.Character
         local humanoid = character and character:FindFirstChild("Humanoid")
@@ -1757,8 +1697,7 @@ local function createAnimationPage(card)
         end
     end)
     animY = animY + 40
-    
-    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 35), "循环播放", function(state)
+    createToggle(animContent, UDim2.new(0, 0, 0, animY), UDim2.new(1, 0, 0, 40), "循环播放", function(state)
         local character = player.Character
         local humanoid = character and character:FindFirstChild("Humanoid")
         if humanoid then
@@ -1768,6 +1707,7 @@ local function createAnimationPage(card)
         end
     end)
 end
+
 -- ==================== FE模块 ====================
 local function createFEPage(card)
     local scrollFrame10 = Instance.new("ScrollingFrame")
@@ -1806,29 +1746,24 @@ local function createGraphicsPage(card)
     scrollFrame11.Parent = card
     
     local yPos = 10
-    local spacing = 50
     
-    -- ============ 模糊（折叠） ============
     local blurContent = createCollapsible(scrollFrame11, yPos, "模糊", 800)
-    
     local blurY = 5
     
-    -- 模糊类型（折叠）
     local blurTypeContent = createCollapsible(blurContent, blurY, "模糊类型", 200)
     local blurTypeY = 5
     local blurTypes = {"运动模糊", "径向模糊", "方向模糊", "缩放模糊"}
     for _, blurType in ipairs(blurTypes) do
-        createToggle(blurTypeContent, UDim2.new(0, 0, 0, blurTypeY), UDim2.new(1, 0, 0, 30), blurType, function(state) end)
-        blurTypeY = blurTypeY + 35
+        createToggle(blurTypeContent, UDim2.new(0, 0, 0, blurTypeY), UDim2.new(1, 0, 0, 35), blurType, function(state) end)
+        blurTypeY = blurTypeY + 40
     end
     blurY = blurY + 50
     
-    -- 预设配置
     local presetContent = createCollapsible(blurContent, blurY, "预设配置", 200)
     local presetY = 5
     local presets = {"默认", "强烈", "柔和", "电影", "电影质感"}
     for _, preset in ipairs(presets) do
-        createToggle(presetContent, UDim2.new(0, 0, 0, presetY), UDim2.new(1, 0, 0, 30), preset, function(state)
+        createToggle(presetContent, UDim2.new(0, 0, 0, presetY), UDim2.new(1, 0, 0, 35), preset, function(state)
             if state then
                 local blur = Instance.new("BlurEffect")
                 blur.Parent = Lighting
@@ -1845,11 +1780,11 @@ local function createGraphicsPage(card)
                 end
             end
         end)
-        presetY = presetY + 35
+        presetY = presetY + 40
     end
     blurY = blurY + 50
     
-    createToggle(blurContent, UDim2.new(0, 0, 0, blurY), UDim2.new(1, 0, 0, 35), "启用模糊", function(state)
+    createToggle(blurContent, UDim2.new(0, 0, 0, blurY), UDim2.new(1, 0, 0, 40), "启用模糊", function(state)
         if state then
             local blur = Instance.new("BlurEffect")
             blur.Name = "CustomBlur"
@@ -1860,41 +1795,30 @@ local function createGraphicsPage(card)
             if blur then blur:Destroy() end
         end
     end)
-    blurY = blurY + 40
-    
+    blurY = blurY + 45
     createInputRow(blurContent, blurY, "模糊强度：", "10", function(value)
         local blur = Lighting:FindFirstChild("CustomBlur")
         if blur then blur.Size = value end
     end)
     blurY = blurY + 40
-    
     createInputRow(blurContent, blurY, "模糊平滑度：", "5", function(value) end)
     blurY = blurY + 40
-    
     createInputRow(blurContent, blurY, "模糊敏感度：", "3", function(value) end)
     blurY = blurY + 40
-    
     createInputRow(blurContent, blurY, "模糊持续时间：", "1", function(value) end)
     blurY = blurY + 40
-    
     createInputRow(blurContent, blurY, "方向X：", "0", function(value) end)
     blurY = blurY + 40
-    
     createInputRow(blurContent, blurY, "方向Y：", "0", function(value) end)
     blurY = blurY + 40
-    
     createInputRow(blurContent, blurY, "区域Y1：", "0", function(value) end)
     blurY = blurY + 40
-    
     createInputRow(blurContent, blurY, "区域Y2：", "0", function(value) end)
     blurY = blurY + 40
-    
     createInputRow(blurContent, blurY, "区域R：", "0", function(value) end)
-    blurY = blurY + 40
     
     yPos = yPos + 50
     
-    -- 画质
     createToggle(scrollFrame11, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "画质", function(state)
         if state then
             settings().Rendering.QualityLevel = 21
@@ -1902,9 +1826,8 @@ local function createGraphicsPage(card)
             settings().Rendering.QualityLevel = 10
         end
     end)
-    yPos = yPos + spacing
+    yPos = yPos + 50
     
-    -- 全地图发光
     createToggle(scrollFrame11, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "全地图发光", function(state)
         if state then
             Lighting.Brightness = 3
@@ -1914,7 +1837,8 @@ local function createGraphicsPage(card)
             Lighting.ExposureCompensation = 0
         end
     end)
-end-- ==================== 透视模块 ====================
+end
+-- ==================== 透视模块 ====================
 local function createESPPage(card)
     local scrollFrame12 = Instance.new("ScrollingFrame")
     scrollFrame12.Size = UDim2.new(1, 0, 1, 0)
@@ -1927,16 +1851,12 @@ local function createESPPage(card)
     scrollFrame12.Parent = card
     
     local yPos = 10
-    local spacing = 50
     
-    -- ============ 透视玩家一（折叠） ============
     local espContent = createCollapsible(scrollFrame12, yPos, "透视玩家一", 1500)
-    
     local espY = 5
     
-    -- FPS总开关
     local espActive = false
-    createToggle(espContent, UDim2.new(0, 0, 0, espY), UDim2.new(1, 0, 0, 35), "FPS总开关", function(state)
+    createToggle(espContent, UDim2.new(0, 0, 0, espY), UDim2.new(1, 0, 0, 40), "FPS总开关", function(state)
         espActive = state
         spawn(function()
             while espActive do
@@ -1954,64 +1874,40 @@ local function createESPPage(card)
             end
         end)
     end)
-    espY = espY + 40
+    espY = espY + 45
     
-    -- 颜色模式
     local colorModeContent = createCollapsible(espContent, espY, "颜色模式", 200)
     local colorModeY = 5
     local colorModes = {"固定", "按血量", "按距离", "按队伍"}
     for _, mode in ipairs(colorModes) do
-        createToggle(colorModeContent, UDim2.new(0, 0, 0, colorModeY), UDim2.new(1, 0, 0, 30), mode, function(state) end)
-        colorModeY = colorModeY + 35
+        createToggle(colorModeContent, UDim2.new(0, 0, 0, colorModeY), UDim2.new(1, 0, 0, 35), mode, function(state) end)
+        colorModeY = colorModeY + 40
     end
     espY = espY + 50
     
-    -- 方框样式
     local boxStyleContent = createCollapsible(espContent, espY, "方框样式", 200)
     local boxStyleY = 5
     local boxStyles = {"矩形", "角框", "圆形"}
     for _, style in ipairs(boxStyles) do
-        createToggle(boxStyleContent, UDim2.new(0, 0, 0, boxStyleY), UDim2.new(1, 0, 0, 30), style, function(state) end)
-        boxStyleY = boxStyleY + 35
+        createToggle(boxStyleContent, UDim2.new(0, 0, 0, boxStyleY), UDim2.new(1, 0, 0, 35), style, function(state) end)
+        boxStyleY = boxStyleY + 40
     end
     espY = espY + 50
     
-    -- 开关类
-    local espToggles = {
-        "身体方框",
-        "头部圆点",
-        "血量",
-        "用户名",
-        "距离",
-        "骨骼",
-        "天线",
-        "天线起点",
-        "高亮显示",
-        "发光显示",
-        "显示人数",
-        "选择ESP颜色",
-        "队伍检测",
-        "墙壁检测",
-        "活体检测",
-        "好友检测",
-    }
-    
+    local espToggles = {"身体方框", "头部圆点", "血量", "用户名", "距离", "骨骼", "天线", "天线起点", "高亮显示", "发光显示", "显示人数", "选择ESP颜色", "队伍检测", "墙壁检测", "活体检测", "好友检测"}
     for _, toggleName in ipairs(espToggles) do
-        createToggle(espContent, UDim2.new(0, 0, 0, espY), UDim2.new(1, 0, 0, 35), toggleName, function(state) end)
-        espY = espY + 40
+        createToggle(espContent, UDim2.new(0, 0, 0, espY), UDim2.new(1, 0, 0, 40), toggleName, function(state) end)
+        espY = espY + 45
     end
     
     yPos = yPos + 50
     
-    -- ============ 透视脚本用户（折叠） ============
     local scriptUserContent = createCollapsible(scrollFrame12, yPos, "透视脚本用户", 200)
-    
     local scriptUserY = 5
-    createToggle(scriptUserContent, UDim2.new(0, 0, 0, scriptUserY), UDim2.new(1, 0, 0, 35), "透视脚本用户", function(state) end)
-    scriptUserY = scriptUserY + 40
-    
-    createToggle(scriptUserContent, UDim2.new(0, 0, 0, scriptUserY), UDim2.new(1, 0, 0, 35), "显示正在使用脚本的用户", function(state) end)
-  end
+    createToggle(scriptUserContent, UDim2.new(0, 0, 0, scriptUserY), UDim2.new(1, 0, 0, 40), "透视脚本用户", function(state) end)
+    scriptUserY = scriptUserY + 45
+    createToggle(scriptUserContent, UDim2.new(0, 0, 0, scriptUserY), UDim2.new(1, 0, 0, 40), "显示正在使用脚本的用户", function(state) end)
+end
 -- ==================== ACS漏洞模块 ====================
 local function createACSPage(card)
     local scrollFrame13 = Instance.new("ScrollingFrame")
@@ -2025,9 +1921,7 @@ local function createACSPage(card)
     scrollFrame13.Parent = card
     
     local yPos = 10
-    local spacing = 50
     
-    -- ============ 检测状态 ============
     local detectLabel = Instance.new("TextLabel")
     detectLabel.Size = UDim2.new(1, -20, 0, 35)
     detectLabel.Position = UDim2.new(0, 10, 0, yPos)
@@ -2066,16 +1960,13 @@ local function createACSPage(card)
             Duration = 2,
         })
     end)
-    yPos = yPos + spacing
+    yPos = yPos + 50
     
-    -- ============ 目标玩家操作（折叠） ============
     local targetContent = createCollapsible(scrollFrame13, yPos, "目标玩家操作", 600)
     local targetY = 5
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "选择目标玩家", function(state) end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "传送到玩家", function(state)
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "选择目标玩家", function(state) end)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "传送到玩家", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= player and plr.Character then
@@ -2088,9 +1979,8 @@ local function createACSPage(card)
             end
         end
     end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "击杀选中玩家", function(state)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "击杀选中玩家", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= player and plr.Character then
@@ -2100,9 +1990,8 @@ local function createACSPage(card)
             end
         end
     end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "致残选中玩家", function(state)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "致残选中玩家", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= player and plr.Character then
@@ -2115,9 +2004,8 @@ local function createACSPage(card)
             end
         end
     end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "治疗选中玩家", function(state)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "治疗选中玩家", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= player and plr.Character then
@@ -2127,9 +2015,8 @@ local function createACSPage(card)
             end
         end
     end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "上帝模式选中玩家", function(state)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "上帝模式选中玩家", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= player and plr.Character then
@@ -2142,9 +2029,8 @@ local function createACSPage(card)
             end
         end
     end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "压制选中玩家", function(state)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "压制选中玩家", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= player and plr.Character then
@@ -2156,15 +2042,12 @@ local function createACSPage(card)
             end
         end
     end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "子弹呼啸选中玩家", function(state) end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "给选中玩家无限弹药", function(state) end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "拖拽选中玩家", function(state)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "子弹呼啸选中玩家", function(state) end)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "给选中玩家无限弹药", function(state) end)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "拖拽选中玩家", function(state)
         if state then
             spawn(function()
                 while state do
@@ -2182,17 +2065,14 @@ local function createACSPage(card)
             end)
         end
     end)
-    targetY = targetY + 40
-    
-    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 35), "全局攻击", function(state) end)
+    targetY = targetY + 45
+    createToggle(targetContent, UDim2.new(0, 0, 0, targetY), UDim2.new(1, 0, 0, 40), "全局攻击", function(state) end)
     
     yPos = yPos + 50
     
-    -- ============ 杀死所有人（折叠） ============
     local killAllContent = createCollapsible(scrollFrame13, yPos, "杀死所有人", 600)
     local killY = 5
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "杀死所有人", function(state)
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "杀死所有人", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= player and plr.Character then
@@ -2202,10 +2082,10 @@ local function createACSPage(card)
             end
         end
     end)
-    killY = killY + 40
+    killY = killY + 45
     
     local autoKillActive = false
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "自动秒杀循环", function(state)
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "自动秒杀循环", function(state)
         autoKillActive = state
         if state then
             spawn(function()
@@ -2221,9 +2101,8 @@ local function createACSPage(card)
             end)
         end
     end)
-    killY = killY + 40
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "杀死所有人(包括自己)", function(state)
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "杀死所有人(包括自己)", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr.Character then
@@ -2233,9 +2112,8 @@ local function createACSPage(card)
             end
         end
     end)
-    killY = killY + 40
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "让所有人残疾", function(state)
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "让所有人残疾", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= player and plr.Character then
@@ -2248,9 +2126,8 @@ local function createACSPage(card)
             end
         end
     end)
-    killY = killY + 40
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "治疗所有人", function(state)
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "治疗所有人", function(state)
         if state then
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= player and plr.Character then
@@ -2260,14 +2137,11 @@ local function createACSPage(card)
             end
         end
     end)
-    killY = killY + 40
-    
-    local autoHealActive = false
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "自动治疗循环", function(state)
-        autoHealActive = state
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "自动治疗循环", function(state)
         if state then
             spawn(function()
-                while autoHealActive do
+                while state do
                     local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
                     if humanoid then humanoid.Health = humanoid.MaxHealth end
                     wait(0.5)
@@ -2275,260 +2149,76 @@ local function createACSPage(card)
             end)
         end
     end)
-    killY = killY + 40
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "治疗队友", function(state) end)
-    killY = killY + 40
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "伤害队友", function(state) end)
-    killY = killY + 40
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "范围爆炸伤害", function(state) end)
-    killY = killY + 40
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "范围Hit爆炸", function(state) end)
-    killY = killY + 40
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "自动攻击循环", function(state) end)
-    killY = killY + 40
-    
-    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 35), "远程攻击", function(state) end)
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "治疗队友", function(state) end)
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "伤害队友", function(state) end)
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "范围爆炸伤害", function(state) end)
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "范围Hit爆炸", function(state) end)
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "自动攻击循环", function(state) end)
+    killY = killY + 45
+    createToggle(killAllContent, UDim2.new(0, 0, 0, killY), UDim2.new(1, 0, 0, 40), "远程攻击", function(state) end)
     
     yPos = yPos + 50
     
-    -- ============ 自动修改（折叠） ============
     local autoModContent = createCollapsible(scrollFrame13, yPos, "自动修改", 600)
     local autoModY = 5
-    
-    local autoModToggles = {
-        "一键无敌",
-        "武器一击必杀",
-        "爆炸子弹",
-        "无限弹药",
-        "获取所有武器",
-        "本地配置2.0.1",
-        "无限体力",
-        "禁用坠落伤害",
-        "允许跳跃",
-        "无限子弹",
-        "无敌模式",
-        "无限呼吸",
-        "无限冲刺",
-    }
-    
+    local autoModToggles = {"一键无敌", "武器一击必杀", "爆炸子弹", "无限弹药", "获取所有武器", "本地配置2.0.1", "无限体力", "禁用坠落伤害", "允许跳跃", "无限子弹", "无敌模式", "无限呼吸", "无限冲刺"}
     for _, toggleName in ipairs(autoModToggles) do
-        createToggle(autoModContent, UDim2.new(0, 0, 0, autoModY), UDim2.new(1, 0, 0, 35), toggleName, function(state) end)
-        autoModY = autoModY + 40
+        createToggle(autoModContent, UDim2.new(0, 0, 0, autoModY), UDim2.new(1, 0, 0, 40), toggleName, function(state) end)
+        autoModY = autoModY + 45
     end
     
     yPos = yPos + 50
     
-    -- ============ 破拆/干扰（折叠） ============
     local destroyContent = createCollapsible(scrollFrame13, yPos, "破拆/干扰", 500)
     local destroyY = 5
-    
-    local destroyToggles = {
-        "破拆干扰",
-        "破拆强度",
-        "位置破拆",
-        "全局破拆",
-        "破坏所有建筑物",
-        "破坏玩家建筑物",
-        "全局干扰",
-        "全局压制干扰",
-        "自动压制循环",
-        "全局子弹呼啸",
-        "自动呼啸循环",
-    }
-    
+    local destroyToggles = {"破拆干扰", "破拆强度", "位置破拆", "全局破拆", "破坏所有建筑物", "破坏玩家建筑物", "全局干扰", "全局压制干扰", "自动压制循环", "全局子弹呼啸", "自动呼啸循环"}
     for _, toggleName in ipairs(destroyToggles) do
-        createToggle(destroyContent, UDim2.new(0, 0, 0, destroyY), UDim2.new(1, 0, 0, 35), toggleName, function(state) end)
-        destroyY = destroyY + 40
+        createToggle(destroyContent, UDim2.new(0, 0, 0, destroyY), UDim2.new(1, 0, 0, 40), toggleName, function(state) end)
+        destroyY = destroyY + 45
     end
     
     yPos = yPos + 50
     
-    -- ============ 崩溃服务器（折叠） ============
-    local crashContent = createCollapsible(scrollFrame13, yPos, "崩溃服务器", 700)
+    local crashContent = createCollapsible(scrollFrame13, yPos, "崩溃服务器", 500)
     local crashY = 5
-    
-    local crashToggles = {
-        "崩溃服务器(NaN)",
-        "服务器卡顿攻击",
-        "服务器延迟攻击",
-        "完全卡死服务器",
-        "超级NaN风暴",
-        "内存炸弹",
-        "无限投递崩溃",
-        "混合超载攻击",
-        "数据洪流攻击",
-        "破拆风暴",
-        "全世界轰炸",
-        "极速崩溃",
-        "无限循环请求",
-        "资源耗尽攻击",
-        "全速攻击",
-        "延迟爆炸攻击",
-    }
-    
+    local crashToggles = {"服务器卡顿攻击", "服务器延迟攻击", "完全卡死服务器", "无限投递崩溃", "数据洪流攻击", "全世界轰炸", "极速崩溃", "无限循环请求", "全速攻击", "延迟爆炸攻击"}
     for _, toggleName in ipairs(crashToggles) do
-        createToggle(crashContent, UDim2.new(0, 0, 0, crashY), UDim2.new(1, 0, 0, 35), toggleName, function(state) end)
-        crashY = crashY + 40
+        createToggle(crashContent, UDim2.new(0, 0, 0, crashY), UDim2.new(1, 0, 0, 40), toggleName, function(state) end)
+        crashY = crashY + 45
     end
     
     yPos = yPos + 50
     
-    -- ============ 全图效果（折叠） ============
     local mapEffectContent = createCollapsible(scrollFrame13, yPos, "全图效果", 500)
     local mapEffectY = 5
-    
-    local mapEffectToggles = {
-        "全图Hit爆炸",
-        "全图Hit爆炸循环",
-        "单图全图Hit爆炸",
-        "全图燃烧效果",
-        "全图冰冻效果",
-        "全图雷电效果",
-        "全图毒气效果",
-        "全图击飞效果",
-        "全图眩晕效果",
-        "全图混乱效果",
-    }
-    
+    local mapEffectToggles = {"全图Hit爆炸", "全图Hit爆炸循环", "单图全图Hit爆炸", "全图燃烧效果", "全图冰冻效果", "全图雷电效果", "全图毒气效果", "全图击飞效果", "全图眩晕效果", "全图混乱效果"}
     for _, toggleName in ipairs(mapEffectToggles) do
-        createToggle(mapEffectContent, UDim2.new(0, 0, 0, mapEffectY), UDim2.new(1, 0, 0, 35), toggleName, function(state) end)
-        mapEffectY = mapEffectY + 40
+        createToggle(mapEffectContent, UDim2.new(0, 0, 0, mapEffectY), UDim2.new(1, 0, 0, 40), toggleName, function(state) end)
+        mapEffectY = mapEffectY + 45
     end
-  end-- ==================== 云服取物模块 ====================
-local function createCloudItemPage(card)
+end
+-- ==================== 飞行与飞车模块 ====================
+local function createFlyPage(card)
     local scrollFrame14 = Instance.new("ScrollingFrame")
     scrollFrame14.Size = UDim2.new(1, 0, 1, 0)
     scrollFrame14.BackgroundTransparency = 1
     scrollFrame14.BorderSizePixel = 0
     scrollFrame14.ScrollBarThickness = 4
     scrollFrame14.ScrollingDirection = Enum.ScrollingDirection.Y
-    scrollFrame14.CanvasSize = UDim2.new(0, 0, 0, 1500)
+    scrollFrame14.CanvasSize = UDim2.new(0, 0, 0, 600)
     scrollFrame14.ZIndex = 98
     scrollFrame14.Parent = card
     
     local yPos = 10
     local spacing = 50
     
-    -- ============ 武器库（折叠） ============
-    local weaponContent = createCollapsible(scrollFrame14, yPos, "武器库", 600)
-    local weaponY = 5
-    
-    local weapons = {
-        {"AK47", "rbxassetid://1055297"},
-        {"M4A1", "rbxassetid://1055298"},
-        {"手枪", "rbxassetid://1055299"},
-        {"狙击枪", "rbxassetid://1055300"},
-        {"散弹枪", "rbxassetid://1055301"},
-        {"火箭筒", "rbxassetid://1055302"},
-        {"武士刀", "rbxassetid://1055303"},
-        {"棒球棍", "rbxassetid://1055304"},
-    }
-    
-    for _, weapon in ipairs(weapons) do
-        createToggle(weaponContent, UDim2.new(0, 0, 0, weaponY), UDim2.new(1, 0, 0, 35), weapon[1], function(state)
-            if state then
-                local tool = Instance.new("Tool")
-                tool.Name = weapon[1]
-                tool.RequiresHandle = true
-                local handle = Instance.new("Part")
-                handle.Name = "Handle"
-                handle.Size = Vector3.new(1, 3, 1)
-                handle.Parent = tool
-                tool.Parent = player.Backpack
-            end
-        end)
-        weaponY = weaponY + 40
-    end
-    
-    yPos = yPos + 50
-    
-    -- ============ 道具库（折叠） ============
-    local itemContent = createCollapsible(scrollFrame14, yPos, "道具库", 600)
-    local itemY = 5
-    
-    local items = {
-        "可乐",
-        "汉堡",
-        "披萨",
-        "苹果",
-        "香蕉",
-        "医疗包",
-        "手榴弹",
-        "对讲机",
-        "望远镜",
-        "钥匙",
-    }
-    
-    for _, item in ipairs(items) do
-        createToggle(itemContent, UDim2.new(0, 0, 0, itemY), UDim2.new(1, 0, 0, 35), item, function(state)
-            if state then
-                local tool = Instance.new("Tool")
-                tool.Name = item
-                tool.RequiresHandle = true
-                local handle = Instance.new("Part")
-                handle.Name = "Handle"
-                handle.Size = Vector3.new(1, 1, 1)
-                handle.Parent = tool
-                tool.Parent = player.Backpack
-            end
-        end)
-        itemY = itemY + 40
-    end
-    
-    yPos = yPos + 50
-    
-    -- ============ 模型库（折叠） ============
-    local modelContent = createCollapsible(scrollFrame14, yPos, "模型库", 300)
-    local modelY = 5
-    
-    local models = {
-        "汽车",
-        "飞机",
-        "船",
-        "房子",
-        "树",
-    }
-    
-    for _, model in ipairs(models) do
-        createToggle(modelContent, UDim2.new(0, 0, 0, modelY), UDim2.new(1, 0, 0, 35), model, function(state)
-            if state then
-                local character = player.Character
-                if character then
-                    local newPart = Instance.new("Part")
-                    newPart.Name = model
-                    newPart.Size = Vector3.new(4, 4, 4)
-                    newPart.Position = character.Position + Vector3.new(0, 5, 0)
-                    newPart.Parent = workspace
-                end
-            end
-        end)
-        modelY = modelY + 40
-    end
-end
-
--- ==================== 飞行与飞车模块 ====================
-local function createFlyPage(card)
-    local scrollFrame15 = Instance.new("ScrollingFrame")
-    scrollFrame15.Size = UDim2.new(1, 0, 1, 0)
-    scrollFrame15.BackgroundTransparency = 1
-    scrollFrame15.BorderSizePixel = 0
-    scrollFrame15.ScrollBarThickness = 4
-    scrollFrame15.ScrollingDirection = Enum.ScrollingDirection.Y
-    scrollFrame15.CanvasSize = UDim2.new(0, 0, 0, 600)
-    scrollFrame15.ZIndex = 98
-    scrollFrame15.Parent = card
-    
-    local yPos = 10
-    local spacing = 50
-    
-    -- 飞行
     local flyActive = false
-    createToggle(scrollFrame15, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "飞行", function(state)
+    createToggle(scrollFrame14, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "飞行", function(state)
         flyActive = state
         if state then
             spawn(function()
@@ -2548,15 +2238,11 @@ local function createFlyPage(card)
     end)
     yPos = yPos + spacing
     
-    -- 飞行速度
-    createInputRow(scrollFrame15, yPos, "飞行速度：", "50", function(value)
-        -- 飞行速度设置
-    end)
+    createInputRow(scrollFrame14, yPos, "飞行速度：", "50", function(value) end)
     yPos = yPos + 40
     
-    -- 阿尔宙斯飞行
     local arceusFlyActive = false
-    createToggle(scrollFrame15, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "阿尔宙斯飞行", function(state)
+    createToggle(scrollFrame14, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "阿尔宙斯飞行", function(state)
         arceusFlyActive = state
         if state then
             spawn(function()
@@ -2576,9 +2262,8 @@ local function createFlyPage(card)
     end)
     yPos = yPos + spacing
     
-    -- F1飞车
     local flyCarActive = false
-    createToggle(scrollFrame15, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "F1飞车", function(state)
+    createToggle(scrollFrame14, UDim2.new(0, 10, 0, yPos), UDim2.new(1, -20, 0, 40), "F1飞车", function(state)
         flyCarActive = state
         if state then
             spawn(function()
@@ -2592,7 +2277,9 @@ local function createFlyPage(card)
             end)
         end
     end)
-    end-- ==================== 卡片创建 ====================
+end
+
+-- ==================== 卡片创建 ====================
 local function createCard(featureIndex)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(1, 0, 1, 0)
@@ -2633,8 +2320,6 @@ local function createCard(featureIndex)
     elseif featureIndex == 13 then
         createACSPage(card)
     elseif featureIndex == 14 then
-        createCloudItemPage(card)
-    elseif featureIndex == 15 then
         createFlyPage(card)
     end
     
@@ -2745,7 +2430,7 @@ local function closeAll()
     isPanelAnimating = true
     panelPhysics.heightVelocity = -20
     panelPhysics.widthVelocity = -15
-    task.delay(0.4, function() screenGui:Destroy() end)
+    task.delay(0.4, function() fluidGui:Destroy() end)
 end
 
 -- ==================== 事件绑定 ====================
@@ -2808,6 +2493,9 @@ TweenService:Create(container, TweenInfo.new(0.8, Enum.EasingStyle.Bounce, Enum.
 
 updateSidebarSelection()
 
-print("✅ 时脚本 · 流体云灵动岛 · 终极版")
-print("🔥 180+功能已注入")
-print("👑 作者：时脚本")
+-- ==================== loadFluidCloud函数定义 ====================
+function loadFluidCloud()
+    print("✅ 时脚本 · 流体云灵动岛 · 终极版")
+    print("🔥 180+功能已注入")
+    print("👑 作者：时脚本")
+end
